@@ -4,6 +4,7 @@
 '''
 
 # TODO1: 使用period信息。
+# TODO2: 计算各个类别物品的均值，最大值，平均值, 中值
 
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
