@@ -1,14 +1,15 @@
 '''
 训练集 3月15日到4月7日, 测试集4月12到4月20
+
 '''
 
-
+# TODO1: 使用period信息。
 
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 import gc
 
-debug = True
+debug = False
 
 print("loading data ...")
 
