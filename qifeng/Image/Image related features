@@ -1,0 +1,3 @@
+1. Using pretrained models, predict the labels. The assumption is that when the model can recognise well, so so human. 
+
+https://www.kaggle.com/wesamelshamy/ad-image-recognition-and-quality-scoring
