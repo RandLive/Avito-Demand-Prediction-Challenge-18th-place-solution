@@ -6,8 +6,15 @@
 # TODO1: 使用period信息。
 # TODO2: 计算各个类别物品的均值，最大值，平均值, 中值
 
-import pandas as pd
+from nltk.corpus import stopwords 
 from sklearn.preprocessing import LabelEncoder
+from sklearn.pipeline import FeatureUnion
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from scipy.sparse import hstack, csr_matrix
+import pandas as pd
+import numpy as np
+import lightgbm as lgb
 import gc
 
 debug = True
@@ -23,16 +30,15 @@ def feature_Eng_Datetime(df):
     return df
 
 lbl = LabelEncoder()
-
+cat_col = ["user_id", "region", "city", "parent_category_name",
+           "category_name", "user_type", "image_top_1",
+           # TODO: 这里还需要西考虑一下
+           "param_1", "param_2", "param_3"]
 def feature_Eng_label_Enc(df):
     print('feature engineering -> lable encoding ...')
-    cat_col = ["user_id", "region", "city", "parent_category_name",
-               "category_name", "user_type", "image_top_1",
-               # TODO: 这里还需要西考虑一下
-               "param_1", "param_2", "param_3"]
     for col in cat_col:
         df[col] = lbl.fit_transform(df[col].astype(str))
-    del cat_col;gc.collect()
+    gc.collect()
     return df
 
 
@@ -50,6 +56,17 @@ def feature_Eng_NA(df):
 #    return df
 
 
+
+def text_Hash(df):
+    df['text_feat_p1_p2_p3'] = df.apply(lambda row: ' '.join([
+            str(row['param_1']), str(row['param_2']), str(row['param_3'])
+            ]),axis=1)
+    df['text_feat_p2_p3'] = df.apply(lambda row: ' '.join([
+            str(row['param_2']), str(row['param_3'])
+        ]),axis=1)
+    return df
+    
+
 def drop_image_data(df):
     print('feature engineering -> drop image data ...')
     df.drop('image', axis=1, inplace=True)
@@ -63,10 +80,10 @@ if debug == False: # Run
     del train_df['deal_probability']; gc.collect()
     test_df = pd.read_csv('../input/test.csv', index_col = "item_id", parse_dates = ["activation_date"])
 else: # debug
-    train_df = pd.read_csv('../input/train.csv', index_col = "item_id", nrows=10000, parse_dates = ["activation_date"])
+    train_df = pd.read_csv('../input/train.csv', index_col = "item_id", nrows=50000, parse_dates = ["activation_date"])
     y = train_df['deal_probability']
     del train_df['deal_probability']; gc.collect()
-    test_df = pd.read_csv('../input/test.csv', index_col = "item_id", nrows=10000, parse_dates = ["activation_date"])
+    test_df = pd.read_csv('../input/test.csv', index_col = "item_id", nrows=50000, parse_dates = ["activation_date"])
 
 
 train_index = len(train_df)
@@ -79,11 +96,111 @@ del train_df, test_df
 gc.collect()
 
 
-
+text_Hash(full_df)
 feature_Eng_Datetime(full_df)
 feature_Eng_label_Enc(full_df)
 feature_Eng_NA(full_df)
 drop_image_data(full_df)
 
+# Meta Text Features
+russian_stop = set(stopwords.words('russian'))
+textfeats = ["description", "text_feat_p1_p2_p3", "text_feat_p2_p3", "title"]
+for cols in textfeats:
+    full_df[cols] = full_df[cols].astype(str).fillna('nicapotato').str.lower()
+    full_df[cols + '_num_chars'] = full_df[cols].apply(len) # Count number of Characters
+    full_df[cols + '_num_words'] = full_df[cols].apply(lambda comment: len(comment.split())) # Count number of Words
+    full_df[cols + '_num_unique_words'] = full_df[cols].apply(lambda comment: len(set(w for w in comment.split())))
+    full_df[cols + '_words_vs_unique'] = full_df[cols+'_num_unique_words'] / full_df[cols+'_num_words'] * 100 # Count Unique Words
 
-print(full_df.info())
+tfidf_para = {
+    "stop_words": russian_stop,
+    "analyzer": 'word',
+    "token_pattern": r'\w{1,}',
+    "sublinear_tf": True,
+    "dtype": np.float32,
+    "norm": 'l2',
+    #"min_df":5,
+    #"max_df":.9,
+    "smooth_idf":False
+}
+
+def get_col(col_name): return lambda x: x[col_name]
+vectorizer = FeatureUnion([
+        ('description',TfidfVectorizer(
+            ngram_range=(1, 2),
+            max_features=18000,
+            **tfidf_para,
+            preprocessor=get_col('description'))),
+                
+        ('text_feat_p1_p2_p3',CountVectorizer(
+            ngram_range=(1, 2),
+            #max_features=7000,
+            preprocessor=get_col('text_feat_p1_p2_p3'))),
+                
+        ('text_feat_p2_p3',CountVectorizer(
+            ngram_range=(1, 2),
+            #max_features=7000,
+            preprocessor=get_col('text_feat_p2_p3'))),
+                
+        ('title',TfidfVectorizer(
+            ngram_range=(1, 2),
+            **tfidf_para,
+            #max_features=7000,
+            preprocessor=get_col('title')))
+    ])
+vectorizer.fit(full_df.to_dict('records'))
+ready_full_df = vectorizer.transform(full_df.to_dict('records'))
+tfvocab = vectorizer.get_feature_names()
+
+full_df.drop(textfeats, axis=1,inplace=True)
+
+
+print("Modeling Stage ...")
+# Combine Dense Features with Sparse Text Bag of Words Features
+X = hstack([csr_matrix(full_df.iloc[:train_index]), ready_full_df[:train_index]]) # Sparse Matrix
+test = hstack([csr_matrix(full_df.iloc[train_index:]), ready_full_df[train_index:]]) # Sparse Matrix
+
+tfvocab = full_df.columns.tolist() + tfvocab
+for shape in [X,test]:
+    print("{} Rows and {} Cols".format(*shape.shape))
+print("Feature Names Length: ",len(tfvocab))
+
+del full_df
+gc.collect();
+
+
+# Begin trainning
+X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.10, random_state=23)
+
+print("Light Gradient Boosting Regressor")
+lgbm_params =  {
+    'task': 'train',
+    'boosting_type': 'gbdt',
+    'objective': 'regression',
+    'metric': 'rmse',
+    'max_depth': 15,
+    # 'num_leaves': 31,
+    # 'feature_fraction': 0.65,
+    'bagging_fraction': 0.8,
+    # 'bagging_freq': 5,
+    'learning_rate': 0.019,
+    'verbose': 0
+} 
+
+lgtrain = lgb.Dataset(X_train, y_train,
+                feature_name=tfvocab,
+                categorical_feature = cat_col)
+lgvalid = lgb.Dataset(X_valid, y_valid,
+                feature_name=tfvocab,
+                categorical_feature = cat_col)
+
+
+lgb_clf = lgb.train(
+    lgbm_params,
+    lgtrain,
+    num_boost_round=16000,
+    valid_sets=[lgtrain, lgvalid],
+    valid_names=['train','valid'],
+    early_stopping_rounds=200,
+    verbose_eval=200
+)
