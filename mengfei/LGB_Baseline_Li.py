@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 import gc
 
 
-debug = False
+debug = True
 
 print("loading data ...")
 
@@ -53,6 +53,14 @@ def feature_Eng_NA(df):
     return df
 
 
+def feature_Eng_time_pr(df):
+    print('Feature engineering time data!')
+    df['shelf_period'] = df['date_to'].dt.dayofyear - df['date_from'].dt.dayofyear
+    df['waiting_period'] = df['date_from'].dt.dayofyear- df['activation_date'].dt.dayofyear
+    df['total_period'] = df['date_to'].dt.dayofyear - df['activation_date'].dt.dayofyear
+    df.drop(['activation_date', 'date_from', 'date_to'], axis=1, inplace=True)
+    return df
+
 def text_Hash(df):
     df['text_feat_p1_p2_p3'] = df.apply(lambda row: ' '.join([
             str(row['param_1']), str(row['param_2']), str(row['param_3'])
@@ -71,15 +79,21 @@ def drop_image_data(df):
   
 # load data
 if debug == False: # Run
-    train_df = pd.read_csv('../input/train.csv', index_col = "item_id", parse_dates = ["activation_date"])
+    train_df = pd.read_csv('../input/train.csv',  parse_dates = ["activation_date"])
     y = train_df['deal_probability']
     del train_df['deal_probability']; gc.collect()
-    test_df = pd.read_csv('../input/test.csv', index_col = "item_id", parse_dates = ["activation_date"])
+    test_df = pd.read_csv('../input/test.csv',  parse_dates = ["activation_date"])
+    
+    train_pr = pd.read_csv('../input/periods_train.csv',  parse_dates = ['activation_date'], usecols=['item_id', 'activation_date', 'date_from', 'date_to'])
+    test_pr = pd.read_csv('../input/periods_test.csv',  parse_dates = ['activation_date'], usecols=['item_id', 'activation_date', 'date_from', 'date_to'])
 else: # debug
-    train_df = pd.read_csv('../input/train.csv', index_col = "item_id", nrows=10000, parse_dates = ["activation_date"])
+    train_df = pd.read_csv('../input/train.csv',  nrows=10000, parse_dates = ["activation_date"])
     y = train_df['deal_probability']
     del train_df['deal_probability']; gc.collect()
-    test_df = pd.read_csv('../input/test.csv', index_col = "item_id", nrows=10000, parse_dates = ["activation_date"])
+    test_df = pd.read_csv('../input/test.csv',  nrows=10000, parse_dates = ["activation_date"])
+    
+    train_pr = pd.read_csv('../input/periods_train.csv',  nrows=10000, parse_dates = ['item_id', 'activation_date', 'date_from', 'date_to'])
+    test_pr = pd.read_csv('../input/periods_test.csv',  nrows=10000, parse_dates = ['item_id', 'activation_date', 'date_from', 'date_to'])
 
 
 train_index = len(train_df)
@@ -91,12 +105,24 @@ full_df = pd.concat([train_df, test_df], axis=0)
 del train_df, test_df
 gc.collect()
 
+full_pr = pd.concat([train_pr, test_pr], axis=0)
+del train_pr, test_pr
+gc.collect()
+
 
 text_Hash(full_df)
 feature_Eng_Datetime(full_df)
 feature_Eng_label_Enc(full_df)
 feature_Eng_NA(full_df)
 drop_image_data(full_df)
+
+
+feature_Eng_time_pr(full_pr)
+print('merge train/test with interval info ...')
+full_df = full_df.join(full_pr, on="item_id", how='outer', rsuffix='_')
+full_df.drop('item_id_', axis=1, inplace=True)
+full_df.fillna(-100000, inplace=True)
+full_df.set_index('item_id', inplace=True)
 
 # Meta Text Features
 russian_stop = set(stopwords.words('russian'))
@@ -161,6 +187,7 @@ for shape in [X,test]:
     print("{} Rows and {} Cols".format(*shape.shape))
 print("Feature Names Length: ",len(tfvocab))
 
+print(full_df.info())
 del full_df
 gc.collect();
 
