@@ -119,7 +119,7 @@ drop_image_data(full_df)
 
 feature_Eng_time_pr(full_pr)
 print('merge train/test with interval info ...')
-full_df = full_df.join(full_pr, on="item_id", how='outer', rsuffix='_')
+full_df = full_df.join(full_pr, on="item_id", how='left', rsuffix='_')
 full_df.drop('item_id_', axis=1, inplace=True)
 full_df.fillna(-100000, inplace=True)
 full_df.set_index('item_id', inplace=True)
@@ -188,7 +188,7 @@ for shape in [X,test]:
 print("Feature Names Length: ",len(tfvocab))
 
 print(full_df.info())
-del full_df
+#del full_df
 gc.collect();
 
 
