@@ -4,6 +4,8 @@ Using pretrained models, predict the labels. The assumption is that when the mod
 
 [Wesam Elshamy Ad Image Recognition and Quality Scoring](https://www.kaggle.com/wesamelshamy/ad-image-recognition-and-quality-scoring)
 
+[DUOExtract avito image features via keras VGG16](https://www.kaggle.com/classtag/extract-avito-image-features-via-keras-vgg16)
+
 2. **Manual image features extraction**
 
 Dull, whiteness, colorness, pixels, number of colors, size. That are the things will influece human perception and maybe decision making. 
