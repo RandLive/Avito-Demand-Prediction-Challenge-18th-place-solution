@@ -8,4 +8,4 @@ Using pretrained models, predict the labels. The assumption is that when the mod
 
 Dull, whiteness, colorness, pixels, number of colors, size. That are the things will influece human perception and maybe decision making. 
 
-[sbanAvito - Ideas for Image Features and Image Quality](https://www.kaggle.com/shivamb/avito-ideas-for-image-features-and-image-quality)
+[sban Avito - Ideas for Image Features and Image Quality](https://www.kaggle.com/shivamb/avito-ideas-for-image-features-and-image-quality)
