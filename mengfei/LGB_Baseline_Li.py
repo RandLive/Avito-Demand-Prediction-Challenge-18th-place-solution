@@ -11,11 +11,14 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.pipeline import FeatureUnion
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.model_selection import train_test_split
+from sklearn import metrics
 from scipy.sparse import hstack, csr_matrix
 import pandas as pd
 import numpy as np
 import lightgbm as lgb
 import gc
+
+
 
 debug = True
 
@@ -80,10 +83,10 @@ if debug == False: # Run
     del train_df['deal_probability']; gc.collect()
     test_df = pd.read_csv('../input/test.csv', index_col = "item_id", parse_dates = ["activation_date"])
 else: # debug
-    train_df = pd.read_csv('../input/train.csv', index_col = "item_id", nrows=50000, parse_dates = ["activation_date"])
+    train_df = pd.read_csv('../input/train.csv', index_col = "item_id", nrows=10000, parse_dates = ["activation_date"])
     y = train_df['deal_probability']
     del train_df['deal_probability']; gc.collect()
-    test_df = pd.read_csv('../input/test.csv', index_col = "item_id", nrows=50000, parse_dates = ["activation_date"])
+    test_df = pd.read_csv('../input/test.csv', index_col = "item_id", nrows=10000, parse_dates = ["activation_date"])
 
 
 train_index = len(train_df)
@@ -202,5 +205,12 @@ lgb_clf = lgb.train(
     valid_sets=[lgtrain, lgvalid],
     valid_names=['train','valid'],
     early_stopping_rounds=200,
-    verbose_eval=200
+    verbose_eval=50
 )
+
+print("Model Evaluation Stage")
+print('RMSE:', np.sqrt(metrics.mean_squared_error(y_valid, lgb_clf.predict(X_valid))))
+lgpred = lgb_clf.predict(test)
+lgsub = pd.DataFrame(lgpred,columns=["deal_probability"],index=test_index)
+lgsub['deal_probability'].clip(0.0, 1.0, inplace=True) # Between 0 and 1
+lgsub.to_csv("lgsub.csv",index=True,header=True)
