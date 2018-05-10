@@ -1,4 +1,4 @@
-1. **Labels and probabilities extraction from pretrained model
+1. **Labels and probabilities extraction from pretrained model**
 
 Using pretrained models, predict the labels. The assumption is that when the model can recognise well, so so human. Using VGG16, XceptionV3 and Inception models pretrained on Imagenet.
 
