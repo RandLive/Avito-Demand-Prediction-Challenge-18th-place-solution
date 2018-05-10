@@ -3,7 +3,7 @@
 
 2. **Offical docs**
 On parameters, functions, emsemble of tress, boosting, additives, complexity, score, try out.
-- [Introduction to Boosted Trees¶](http://xgboost.readthedocs.io/en/latest/model.html)
+- [Introduction to Boosted Trees](http://xgboost.readthedocs.io/en/latest/model.html)
 - [XGBoost Parameters](http://xgboost.readthedocs.io/en/latest//parameter.html)
 
 3. **other resources**
