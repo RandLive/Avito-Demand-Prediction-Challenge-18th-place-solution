@@ -3,6 +3,9 @@
 Using pretrained models, predict the labels. The assumption is that when the model can recognise well, so so human. Using VGG16, XceptionV3 and Inception models pretrained on Imagenet.
 
 Wesam Elshamy [Ad Image Recognition and Quality Scoring](https://www.kaggle.com/wesamelshamy/ad-image-recognition-and-quality-scoring)
+    fored from above, combined with #2 manual. 
+    [Peter HurfordImage Feature Engineering](https://www.kaggle.com/peterhurford/image-feature-engineering)
+
 
 DUO [Extract avito image features via keras VGG16](https://www.kaggle.com/classtag/extract-avito-image-features-via-keras-vgg16)
 
