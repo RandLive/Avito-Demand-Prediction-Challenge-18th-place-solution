@@ -4,7 +4,7 @@ Using pretrained models, predict the labels. The assumption is that when the mod
 
 Wesam Elshamy [Ad Image Recognition and Quality Scoring](https://www.kaggle.com/wesamelshamy/ad-image-recognition-and-quality-scoring)
 
-⋅⋅* forked from above, combined with #2 manual. 
+- *forked from above, combined with #2 manual. 
     [Peter HurfordImage Feature Engineering](https://www.kaggle.com/peterhurford/image-feature-engineering)
 
 
