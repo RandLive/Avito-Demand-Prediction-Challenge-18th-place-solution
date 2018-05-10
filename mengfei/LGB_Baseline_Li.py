@@ -13,6 +13,7 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
 from scipy.sparse import hstack, csr_matrix
+from sklearn.model_selection import KFold
 import pandas as pd
 import numpy as np
 import lightgbm as lgb
@@ -20,7 +21,7 @@ import matplotlib.pyplot as plt
 import gc
 
 
-debug = True
+debug = False
 
 print("loading data ...")
 
@@ -168,71 +169,90 @@ for shape in [X,test]:
     print("{} Rows and {} Cols".format(*shape.shape))
 print("Feature Names Length: ",len(tfvocab))
 
-del full_df
+#del full_df
 gc.collect();
 
 
 cat_col = [
            "region", 
            "city", 
-#           "parent_category_name",
-#           "category_name", 
-#           "user_type", 
+           "parent_category_name",
+           "category_name", 
+           "user_type", 
 #           "image_top_1",
            "param_1", 
            "param_2", 
-           "param_3"
+#           "param_3"
            ]
 
 # Begin trainning
-X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.10, random_state=23)
 
-print("Light Gradient Boosting Regressor")
-lgbm_params =  {
-    'device' : 'gpu',
-    'gpu_platform_id' : -1,
-    'gpu_device_id' : -1,
-#    'tree_method': 'feature',
-#    'max_bin ': 500,
+n_folds = 10
+kf = KFold(n_splits=n_folds, random_state=1234, shuffle=True)
+i = 0
+
+for index_train, index_valid in kf.split(y):
     
-    'task': 'train',
-    'boosting_type': 'gbdt',
-    'objective': 'regression',
-    'metric': 'rmse',
-    'max_depth': 15,
-    # 'num_leaves': 31,
-    # 'feature_fraction': 0.65,
-    'bagging_fraction': 0.8,
-    # 'bagging_freq': 5,
-    'learning_rate': 0.019,
-    'verbose': 0
-} 
+    X_train, X_valid = X.tocsc()[index_train], X.tocsc()[index_valid]
+    y_train, y_valid = y[index_train], y[index_valid]
+    
 
-lgtrain = lgb.Dataset(X_train, y_train,
-                feature_name=tfvocab,
-                categorical_feature = cat_col)
-lgvalid = lgb.Dataset(X_valid, y_valid,
-                feature_name=tfvocab,
-                categorical_feature = cat_col)
+    print("trainning in fold" + str(i))
+    lgbm_params =  {
+        
+        'device' : 'gpu',
+        'gpu_platform_id' : -1,
+        'gpu_device_id' : -1,
+        'tree_method': 'feature',
 
-lgb_clf = lgb.train(
-    lgbm_params,
-    lgtrain,
-    num_boost_round=16000,
-    valid_sets=[lgtrain, lgvalid],
-    valid_names=['train','valid'],
-    early_stopping_rounds=200,
-    verbose_eval=50
-)
+        'task': 'train',
+        'boosting_type': 'gbdt',
+        'objective': 'regression',
+        'metric': 'rmse',
+        'max_depth': 15,
+        # 'num_leaves': 31,
+        # 'feature_fraction': 0.65,
+        'bagging_fraction': 0.8,
+        # 'bagging_freq': 5,
+        'learning_rate': 0.019,
+        'verbose': 0, 
+        
+        'min_data':1,
+        'min_data_in_bin':1
+    } 
+    
+    lgtrain = lgb.Dataset(X_train, y_train,
+                    feature_name=tfvocab,
+                    categorical_feature = cat_col)
+    lgvalid = lgb.Dataset(X_valid, y_valid,
+                    feature_name=tfvocab,
+                    categorical_feature = cat_col)
+    
+    lgb_clf = lgb.train(
+        lgbm_params,
+        lgtrain,
+        num_boost_round=16000,
+        valid_sets=[lgtrain, lgvalid],
+        valid_names=['train','valid'],
+        early_stopping_rounds=200,
+        verbose_eval=50,
+        
+    )
+    
+    
+    print("Model Evaluation Stage")
+    print('RMSE:', np.sqrt(metrics.mean_squared_error(y_valid, lgb_clf.predict(X_valid))))
+    lgpred = lgb_clf.predict(test)
 
+    lgpred += lgpred
+    
+    i+=1
 
-print("Model Evaluation Stage")
-print('RMSE:', np.sqrt(metrics.mean_squared_error(y_valid, lgb_clf.predict(X_valid))))
-lgpred = lgb_clf.predict(test)
+lgpred /= n_folds
+
 lgsub = pd.DataFrame(lgpred,columns=["deal_probability"],index=test_index)
 lgsub['deal_probability'].clip(0.0, 1.0, inplace=True) # Between 0 and 1
 lgsub.to_csv("lgsub.csv",index=True,header=True)
-
 
 
 print("Features importance...")
