@@ -3,7 +3,6 @@
 
 '''
 
-# TODO1: 使用period信息。
 # TODO2: 计算各个类别物品的均值，最大值，平均值, 中值
 
 from nltk.corpus import stopwords 
@@ -21,7 +20,7 @@ import matplotlib.pyplot as plt
 import gc
 
 
-debug = True
+debug = False
 
 print("loading data ...")
 
@@ -36,7 +35,6 @@ def feature_Eng_Datetime(df):
 lbl = LabelEncoder()
 cat_col = ["user_id", "region", "city", "parent_category_name",
            "category_name", "user_type", "image_top_1",
-           # TODO: 这里还需要西考虑一下
            "param_1", "param_2", "param_3"]
 def feature_Eng_label_Enc(df):
     print('feature engineering -> lable encoding ...')
@@ -59,6 +57,7 @@ def feature_Eng_time_pr(df):
     df['waiting_period'] = df['date_from'].dt.dayofyear- df['activation_date'].dt.dayofyear
     df['total_period'] = df['date_to'].dt.dayofyear - df['activation_date'].dt.dayofyear
     df.drop(['activation_date', 'date_from', 'date_to'], axis=1, inplace=True)
+    df.fillna(-10000, inplace=True)
     return df
 
 def text_Hash(df):
@@ -115,6 +114,7 @@ feature_Eng_Datetime(full_df)
 feature_Eng_label_Enc(full_df)
 feature_Eng_NA(full_df)
 drop_image_data(full_df)
+
 
 
 feature_Eng_time_pr(full_pr)
@@ -206,7 +206,7 @@ cat_col = [
 
 # Begin trainning
 
-n_folds = 3
+n_folds = 5
 kf = KFold(n_splits=n_folds, random_state=1234, shuffle=True)
 i = 0
 
@@ -223,6 +223,8 @@ for index_train, index_valid in kf.split(y):
         'gpu_platform_id' : -1,
         'gpu_device_id' : -1,
         'tree_method': 'feature',
+        
+        'num_threads': 3,
 
         'task': 'train',
         'boosting_type': 'gbdt',
