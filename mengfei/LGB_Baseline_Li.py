@@ -53,14 +53,6 @@ def feature_Eng_NA(df):
     return df
 
 
-#def feature_Eng_ON_price(df):
-#    print('feature engineering -> statistics on price ...')
-#    df['price'].fillna(-1, inplace=True)
-#    df.fillna('отсутствует описание', inplace=True) # google translation of 'missing discription' into Russian
-#    return df
-
-
-
 def text_Hash(df):
     df['text_feat_p1_p2_p3'] = df.apply(lambda row: ' '.join([
             str(row['param_1']), str(row['param_2']), str(row['param_3'])
@@ -169,7 +161,7 @@ for shape in [X,test]:
     print("{} Rows and {} Cols".format(*shape.shape))
 print("Feature Names Length: ",len(tfvocab))
 
-#del full_df
+del full_df
 gc.collect();
 
 
@@ -235,11 +227,9 @@ for index_train, index_valid in kf.split(y):
         valid_sets=[lgtrain, lgvalid],
         valid_names=['train','valid'],
         early_stopping_rounds=200,
-        verbose_eval=50,
-        
+        verbose_eval=50,       
     )
-    
-    
+       
     print("Model Evaluation Stage")
     print('RMSE:', np.sqrt(metrics.mean_squared_error(y_valid, lgb_clf.predict(X_valid))))
     lgpred = lgb_clf.predict(test)
@@ -248,7 +238,9 @@ for index_train, index_valid in kf.split(y):
     
     i+=1
 
+
 lgpred /= n_folds
+
 
 lgsub = pd.DataFrame(lgpred,columns=["deal_probability"],index=test_index)
 lgsub['deal_probability'].clip(0.0, 1.0, inplace=True) # Between 0 and 1
