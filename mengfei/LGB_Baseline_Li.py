@@ -97,7 +97,7 @@ else: # debug
 
 
 train_index = len(train_df)
-test_index = test_df.index
+test_index = test_df['item_id']
 
 
 # concat dataset
@@ -206,7 +206,7 @@ cat_col = [
 
 # Begin trainning
 
-n_folds = 10
+n_folds = 3
 kf = KFold(n_splits=n_folds, random_state=1234, shuffle=True)
 i = 0
 
