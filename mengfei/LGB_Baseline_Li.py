@@ -1,206 +1,119 @@
-'''
-训练集 3月15日到4月7日, 测试集4月12到4月20
-
-'''
-
-# TODO1: 使用period信息。
-# TODO2: 计算各个类别物品的均值，最大值，平均值, 中值
-
-from nltk.corpus import stopwords 
-from sklearn.preprocessing import LabelEncoder
-from sklearn.pipeline import FeatureUnion
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
-from sklearn.model_selection import train_test_split
-from scipy.sparse import hstack, csr_matrix
-import pandas as pd
-import numpy as np
-import lightgbm as lgb
-import gc
-
-debug = True
-
-print("loading data ...")
-
-def feature_Eng_Datetime(df):
-    print('feature engineering -> datetime ...')
-    df['wday'] = df['activation_date'].dt.weekday
-    df['week'] = df['activation_date'].dt.week
-    df['dom'] = df['activation_date'].dt.day
-    df.drop('activation_date', axis=1, inplace=True)
-    return df
-
-lbl = LabelEncoder()
-cat_col = ["user_id", "region", "city", "parent_category_name",
-           "category_name", "user_type", "image_top_1",
-           # TODO: 这里还需要西考虑一下
-           "param_1", "param_2", "param_3"]
-def feature_Eng_label_Enc(df):
-    print('feature engineering -> lable encoding ...')
-    for col in cat_col:
-        df[col] = lbl.fit_transform(df[col].astype(str))
-    gc.collect()
-    return df
-
-
-def feature_Eng_NA(df):
-    print('feature engineering -> handle NA ...')
-    df['price'].fillna(-1, inplace=True)
-    df.fillna('отсутствует описание', inplace=True) # google translation of 'missing discription' into Russian
-    return df
-
-
-#def feature_Eng_ON_price(df):
-#    print('feature engineering -> statistics on price ...')
-#    df['price'].fillna(-1, inplace=True)
-#    df.fillna('отсутствует описание', inplace=True) # google translation of 'missing discription' into Russian
-#    return df
-
-
-
-def text_Hash(df):
-    df['text_feat_p1_p2_p3'] = df.apply(lambda row: ' '.join([
-            str(row['param_1']), str(row['param_2']), str(row['param_3'])
-            ]),axis=1)
-    df['text_feat_p2_p3'] = df.apply(lambda row: ' '.join([
-            str(row['param_2']), str(row['param_3'])
-        ]),axis=1)
-    return df
-    
-
-def drop_image_data(df):
-    print('feature engineering -> drop image data ...')
-    df.drop('image', axis=1, inplace=True)
-    return df
-    
-  
-# load data
-if debug == False: # Run
-    train_df = pd.read_csv('../input/train.csv', index_col = "item_id", parse_dates = ["activation_date"])
-    y = train_df['deal_probability']
-    del train_df['deal_probability']; gc.collect()
-    test_df = pd.read_csv('../input/test.csv', index_col = "item_id", parse_dates = ["activation_date"])
-else: # debug
-    train_df = pd.read_csv('../input/train.csv', index_col = "item_id", nrows=50000, parse_dates = ["activation_date"])
-    y = train_df['deal_probability']
-    del train_df['deal_probability']; gc.collect()
-    test_df = pd.read_csv('../input/test.csv', index_col = "item_id", nrows=50000, parse_dates = ["activation_date"])
-
-
-train_index = len(train_df)
-test_index = len(test_df)
-
-
-# concat dataset
-full_df = pd.concat([train_df, test_df], axis=0)
-del train_df, test_df
-gc.collect()
-
-
-text_Hash(full_df)
-feature_Eng_Datetime(full_df)
-feature_Eng_label_Enc(full_df)
-feature_Eng_NA(full_df)
-drop_image_data(full_df)
-
-# Meta Text Features
-russian_stop = set(stopwords.words('russian'))
-textfeats = ["description", "text_feat_p1_p2_p3", "text_feat_p2_p3", "title"]
-for cols in textfeats:
-    full_df[cols] = full_df[cols].astype(str).fillna('nicapotato').str.lower()
-    full_df[cols + '_num_chars'] = full_df[cols].apply(len) # Count number of Characters
-    full_df[cols + '_num_words'] = full_df[cols].apply(lambda comment: len(comment.split())) # Count number of Words
-    full_df[cols + '_num_unique_words'] = full_df[cols].apply(lambda comment: len(set(w for w in comment.split())))
-    full_df[cols + '_words_vs_unique'] = full_df[cols+'_num_unique_words'] / full_df[cols+'_num_words'] * 100 # Count Unique Words
-
-tfidf_para = {
-    "stop_words": russian_stop,
-    "analyzer": 'word',
-    "token_pattern": r'\w{1,}',
-    "sublinear_tf": True,
-    "dtype": np.float32,
-    "norm": 'l2',
-    #"min_df":5,
-    #"max_df":.9,
-    "smooth_idf":False
+{
+  "cells": [
+    {
+      "metadata": {
+        "_cell_guid": "82aa5500-8b6f-43b0-a891-d22a5d8411f8",
+        "_uuid": "90bc2d99f499f06ff75da34882d638f49594958c",
+        "collapsed": true,
+        "trusted": false
+      },
+      "cell_type": "code",
+      "source": "'''\n训练集 3月15日到4月7日, 测试集4月12到4月20\n\n'''\n\n# TODO1: 使用period信息。\n# TODO2: 计算各个类别物品的均值，最大值，平均值, 中值\n\nimport pandas as pd\nfrom sklearn.preprocessing import LabelEncoder\nimport gc",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "metadata": {
+        "_cell_guid": "41bb9c17-8c9e-452b-befc-673a6e092652",
+        "_uuid": "7bc141d70316e34dc1969ddd71c9b7f6fd2ce1c8",
+        "collapsed": true,
+        "trusted": false
+      },
+      "cell_type": "code",
+      "source": "debug = True\n\nprint(\"loading data ...\")\n\ndef feature_Eng_Datetime(df):\n    print('feature engineering -> datetime ...')\n    df['wday'] = df['activation_date'].dt.weekday\n    df['week'] = df['activation_date'].dt.week\n    df['dom'] = df['activation_date'].dt.day\n    df.drop('activation_date', axis=1, inplace=True)\n    return df",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "metadata": {
+        "_cell_guid": "27f9ae14-ade7-4be5-916c-2ab924c6253c",
+        "_uuid": "14ba1b16365db2116445afd1d04d846487e9286a",
+        "collapsed": true,
+        "trusted": false
+      },
+      "cell_type": "code",
+      "source": "lbl = LabelEncoder()\n\ndef feature_Eng_label_Enc(df):\n    print('feature engineering -> lable encoding ...')\n    cat_col = [\"user_id\", \"region\", \"city\", \"parent_category_name\",\n               \"category_name\", \"user_type\", \"image_top_1\",\n               # TODO: 这里还需要西考虑一下\n               \"param_1\", \"param_2\", \"param_3\"]\n    for col in cat_col:\n        df[col] = lbl.fit_transform(df[col].astype(str))\n    del cat_col;gc.collect()\n    return df\n\n\ndef feature_Eng_NA(df):\n    print('feature engineering -> handle NA ...')\n    df['price'].fillna(-1, inplace=True)\n    df.fillna('отсутствует описание', inplace=True) # google translation of 'missing discription' into Russian\n    return df\n\n\n#def feature_Eng_ON_price(df):\n#    print('feature engineering -> statistics on price ...')\n#    df['price'].fillna(-1, inplace=True)\n#    df.fillna('отсутствует описание', inplace=True) # google translation of 'missing discription' into Russian\n#    return df\n\ndef feature_time_pr(df):\n    print('Feature engineering time data!')\n    df['shelf_period'] = df['date_to'] - df['date_from']\n    df['waiting_period'] = df['date_from'] - df['activation_date']\n    df['total_period'] = df['date_to'] - df['activation_date'] \n    df.drop(['activation_date', 'date_from', 'date_from'], axis=1, inplace=True)\n\ndef drop_image_data(df):\n    print('feature engineering -> drop image data ...')\n    df.drop('image', axis=1, inplace=True)\n    return df\n    ",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "metadata": {
+        "_cell_guid": "884aca18-2069-4df9-b5bc-8eb948a561d9",
+        "_uuid": "e044ffd8b26f867f42cc2148cb057aa392b87661",
+        "collapsed": true,
+        "trusted": false
+      },
+      "cell_type": "code",
+      "source": "# load data\nif debug == False: # Run\n    train_df = pd.read_csv('../input/train.csv', index_col = \"item_id\", parse_dates = [\"activation_date\"])\n    y = train_df['deal_probability']\n    del train_df['deal_probability']; gc.collect()\n    test_df = pd.read_csv('../input/test.csv', index_col = \"item_id\", parse_dates = [\"activation_date\"])\nelse: # debug\n    train_df = pd.read_csv('../input/train.csv', index_col = \"item_id\", nrows=10000, parse_dates = [\"activation_date\"])\n    y = train_df['deal_probability']\n    del train_df['deal_probability']; gc.collect()\n    test_df = pd.read_csv('../input/test.csv', index_col = \"item_id\", nrows=10000, parse_dates = [\"activation_date\"])\n\n\ntrain_index = len(train_df)\ntest_index = len(test_df)\n\n\n# concat dataset\nfull_df = pd.concat([train_df, test_df], axis=0)\ndel train_df, test_df\ngc.collect()",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "metadata": {
+        "trusted": true,
+        "collapsed": true,
+        "_uuid": "3aa99b06516187994b5c9330c9b2f0d7178ead0d"
+      },
+      "cell_type": "code",
+      "source": "# Load time data\nprint('Loading time data!')\n\ntrain_pr = pd.read.csv('../input/periods_train.csv', index_col = 'item_id', parse_data = ['activation_date', 'date_from', 'date_to'])\ntest_pr = pd.read.csv('../input/periods_test.csv', index_col = 'item_id', parse_data = ['activation_date', 'date_from', 'date_to'])",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "metadata": {
+        "trusted": true,
+        "collapsed": true,
+        "_uuid": "ce178ff3197ba2f13e3f0989a5c29f620f63c5fa"
+      },
+      "cell_type": "code",
+      "source": "# Feature engineering time data\nfeature_time_pr(train_pr)\nfeature_time_pr(test_pr)\n",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "metadata": {
+        "_cell_guid": "b1076dfc-b9ad-4769-8c92-a6c4dae69d19",
+        "_uuid": "8f2839f25d086af736a60e9eeb907d3b93b6e0e5",
+        "collapsed": true,
+        "trusted": false
+      },
+      "cell_type": "code",
+      "source": "jfeature_Eng_Datetime(full_df)\nfeature_Eng_label_Enc(full_df)\nfeature_Eng_NA(full_df)\ndrop_image_data(full_df)\n\n\nprint(full_df.info())",
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "metadata": {
+        "_cell_guid": "79c7e3d0-c299-4dcb-8224-4455121ee9b0",
+        "_uuid": "d629ff2d2480ee46fbb7e2d37f6b5fab8052498a",
+        "collapsed": true,
+        "trusted": false
+      },
+      "cell_type": "code",
+      "source": "",
+      "execution_count": null,
+      "outputs": []
+    }
+  ],
+  "metadata": {
+    "language_info": {
+      "name": "python",
+      "version": "3.6.4",
+      "mimetype": "text/x-python",
+      "codemirror_mode": {
+        "name": "ipython",
+        "version": 3
+      },
+      "pygments_lexer": "ipython3",
+      "nbconvert_exporter": "python",
+      "file_extension": ".py"
+    },
+    "kernelspec": {
+      "display_name": "Python 3",
+      "language": "python",
+      "name": "python3"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 1
 }
-
-def get_col(col_name): return lambda x: x[col_name]
-vectorizer = FeatureUnion([
-        ('description',TfidfVectorizer(
-            ngram_range=(1, 2),
-            max_features=18000,
-            **tfidf_para,
-            preprocessor=get_col('description'))),
-                
-        ('text_feat_p1_p2_p3',CountVectorizer(
-            ngram_range=(1, 2),
-            #max_features=7000,
-            preprocessor=get_col('text_feat_p1_p2_p3'))),
-                
-        ('text_feat_p2_p3',CountVectorizer(
-            ngram_range=(1, 2),
-            #max_features=7000,
-            preprocessor=get_col('text_feat_p2_p3'))),
-                
-        ('title',TfidfVectorizer(
-            ngram_range=(1, 2),
-            **tfidf_para,
-            #max_features=7000,
-            preprocessor=get_col('title')))
-    ])
-vectorizer.fit(full_df.to_dict('records'))
-ready_full_df = vectorizer.transform(full_df.to_dict('records'))
-tfvocab = vectorizer.get_feature_names()
-
-full_df.drop(textfeats, axis=1,inplace=True)
-
-
-print("Modeling Stage ...")
-# Combine Dense Features with Sparse Text Bag of Words Features
-X = hstack([csr_matrix(full_df.iloc[:train_index]), ready_full_df[:train_index]]) # Sparse Matrix
-test = hstack([csr_matrix(full_df.iloc[train_index:]), ready_full_df[train_index:]]) # Sparse Matrix
-
-tfvocab = full_df.columns.tolist() + tfvocab
-for shape in [X,test]:
-    print("{} Rows and {} Cols".format(*shape.shape))
-print("Feature Names Length: ",len(tfvocab))
-
-del full_df
-gc.collect();
-
-
-# Begin trainning
-X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.10, random_state=23)
-
-print("Light Gradient Boosting Regressor")
-lgbm_params =  {
-    'task': 'train',
-    'boosting_type': 'gbdt',
-    'objective': 'regression',
-    'metric': 'rmse',
-    'max_depth': 15,
-    # 'num_leaves': 31,
-    # 'feature_fraction': 0.65,
-    'bagging_fraction': 0.8,
-    # 'bagging_freq': 5,
-    'learning_rate': 0.019,
-    'verbose': 0
-} 
-
-lgtrain = lgb.Dataset(X_train, y_train,
-                feature_name=tfvocab,
-                categorical_feature = cat_col)
-lgvalid = lgb.Dataset(X_valid, y_valid,
-                feature_name=tfvocab,
-                categorical_feature = cat_col)
-
-
-lgb_clf = lgb.train(
-    lgbm_params,
-    lgtrain,
-    num_boost_round=16000,
-    valid_sets=[lgtrain, lgvalid],
-    valid_names=['train','valid'],
-    early_stopping_rounds=200,
-    verbose_eval=200
-)
