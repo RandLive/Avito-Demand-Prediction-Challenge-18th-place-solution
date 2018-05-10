@@ -16,8 +16,8 @@ from scipy.sparse import hstack, csr_matrix
 import pandas as pd
 import numpy as np
 import lightgbm as lgb
+import matplotlib.pyplot as plt
 import gc
-
 
 
 debug = True
@@ -90,7 +90,7 @@ else: # debug
 
 
 train_index = len(train_df)
-test_index = len(test_df)
+test_index = test_df.index
 
 
 # concat dataset
@@ -172,11 +172,29 @@ del full_df
 gc.collect();
 
 
+cat_col = [
+           "region", 
+           "city", 
+#           "parent_category_name",
+#           "category_name", 
+#           "user_type", 
+#           "image_top_1",
+           "param_1", 
+           "param_2", 
+           "param_3"
+           ]
+
 # Begin trainning
 X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.10, random_state=23)
 
 print("Light Gradient Boosting Regressor")
 lgbm_params =  {
+    'device' : 'gpu',
+    'gpu_platform_id' : -1,
+    'gpu_device_id' : -1,
+#    'tree_method': 'feature',
+#    'max_bin ': 500,
+    
     'task': 'train',
     'boosting_type': 'gbdt',
     'objective': 'regression',
@@ -197,7 +215,6 @@ lgvalid = lgb.Dataset(X_valid, y_valid,
                 feature_name=tfvocab,
                 categorical_feature = cat_col)
 
-
 lgb_clf = lgb.train(
     lgbm_params,
     lgtrain,
@@ -208,9 +225,24 @@ lgb_clf = lgb.train(
     verbose_eval=50
 )
 
+
 print("Model Evaluation Stage")
 print('RMSE:', np.sqrt(metrics.mean_squared_error(y_valid, lgb_clf.predict(X_valid))))
 lgpred = lgb_clf.predict(test)
 lgsub = pd.DataFrame(lgpred,columns=["deal_probability"],index=test_index)
 lgsub['deal_probability'].clip(0.0, 1.0, inplace=True) # Between 0 and 1
 lgsub.to_csv("lgsub.csv",index=True,header=True)
+
+
+
+print("Features importance...")
+bst = lgb_clf
+gain = bst.feature_importance('gain')
+ft = pd.DataFrame({'feature':bst.feature_name(), 'split':bst.feature_importance('split'), 'gain':100 * gain / gain.sum()}).sort_values('gain', ascending=False)
+print(ft.head(50))
+
+plt.figure()
+ft[['feature','gain']].head(50).plot(kind='barh', x='feature', y='gain', legend=False, figsize=(10, 20))
+plt.gcf().savefig('features_importance.png')
+
+print("Done.")
