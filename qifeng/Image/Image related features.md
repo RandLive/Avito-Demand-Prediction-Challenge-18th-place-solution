@@ -2,15 +2,16 @@
 
 Using pretrained models, predict the labels. The assumption is that when the model can recognise well, so so human. Using VGG16, XceptionV3 and Inception models pretrained on Imagenet.
 
-Wesam Elshamy [Ad Image Recognition and Quality Scoring](https://www.kaggle.com/wesamelshamy/ad-image-recognition-and-quality-scoring)
+__Run pretrained in kernel__ (https://www.kaggle.com/gaborfodor/keras-pretrained-models/kernels)
+
+Three models: Wesam Elshamy [Ad Image Recognition and Quality Scoring](https://www.kaggle.com/wesamelshamy/ad-image-recognition-and-quality-scoring)
 
 - *forked from above, combined with #2 manual.* 
     [Peter HurfordImage Feature Engineering](https://www.kaggle.com/peterhurford/image-feature-engineering)
 
-
-DUO [Extract avito image features via keras VGG16](https://www.kaggle.com/classtag/extract-avito-image-features-via-keras-vgg16)
-
-__Run pretrained in kernel__ (https://www.kaggle.com/gaborfodor/keras-pretrained-models/kernels)
+RAW features after conv layers:
+- DUO [Extract avito image features via keras VGG16](https://www.kaggle.com/classtag/extract-avito-image-features-via-keras-vgg16) # 25088 dim features, suggested to reduce with PCA?
+- Bruno G. do Amaral [VGG16 Train features](https://www.kaggle.com/bguberfain/vgg16-train-features/code)
 
 2. **Manual image features extraction**
 
