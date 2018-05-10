@@ -10,7 +10,7 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 import gc
 
-debug = False
+debug = True
 
 print("loading data ...")
 
@@ -22,22 +22,40 @@ def feature_Eng_Datetime(df):
     df.drop('activation_date', axis=1, inplace=True)
     return df
 
+lbl = LabelEncoder()
+
+def feature_Eng_label_Enc(df):
+    print('feature engineering -> lable encoding ...')
+    cat_col = ["user_id", "region", "city", "parent_category_name",
+               "category_name", "user_type", "image_top_1",
+               # TODO: 这里还需要西考虑一下
+               "param_1", "param_2", "param_3"]
+    for col in cat_col:
+        df[col] = lbl.fit_transform(df[col].astype(str))
+    del cat_col;gc.collect()
+    return df
+
+
+def feature_Eng_NA(df):
+    print('feature engineering -> handle NA ...')
+    df['price'].fillna(-1, inplace=True)
+    df.fillna('отсутствует описание', inplace=True) # google translation of 'missing discription' into Russian
+    return df
+
+
+#def feature_Eng_ON_price(df):
+#    print('feature engineering -> statistics on price ...')
+#    df['price'].fillna(-1, inplace=True)
+#    df.fillna('отсутствует описание', inplace=True) # google translation of 'missing discription' into Russian
+#    return df
+
 
 def drop_image_data(df):
     print('feature engineering -> drop image data ...')
     df.drop('image', axis=1, inplace=True)
     return df
-
-
-lbl = LabelEncoder()
-cat_col = ["user_id","region","city","parent_category_name","category_name","user_type","image_top_1"]
-def feature_Eng_label_Enc(df):
-    print('feature engineering -> lable encoding ...')
-    for col in cat_col:
-        df[col] = lbl.fit_transform(df[col].astype(str))
-    return df
     
-    
+  
 # load data
 if debug == False: # Run
     train_df = pd.read_csv('../input/train.csv', index_col = "item_id", parse_dates = ["activation_date"])
@@ -61,9 +79,11 @@ del train_df, test_df
 gc.collect()
 
 
+
 feature_Eng_Datetime(full_df)
-drop_image_data(full_df)
 feature_Eng_label_Enc(full_df)
+feature_Eng_NA(full_df)
+drop_image_data(full_df)
 
 
 print(full_df.info())
