@@ -2,8 +2,7 @@
 '''
 # Sergei Fironov
 We have 10 random KFold and constant difference between CV and LB near 0.005. 
-'''
-'''
+
 # Peter Hurford
 I'm more worried about this now., as we now know that the leaderboard is split by time with the public leaderboard
 coming from April 12th and 13th, and the private leaderboard coming from April 14-18th. 
