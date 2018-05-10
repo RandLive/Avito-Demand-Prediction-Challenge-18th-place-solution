@@ -6,6 +6,8 @@ Wesam Elshamy [Ad Image Recognition and Quality Scoring](https://www.kaggle.com/
 
 DUO [Extract avito image features via keras VGG16](https://www.kaggle.com/classtag/extract-avito-image-features-via-keras-vgg16)
 
+Run pretrained in kernel(https://www.kaggle.com/gaborfodor/keras-pretrained-models/kernels)
+
 2. **Manual image features extraction**
 
 Dull, whiteness, colorness, pixels, number of colors, size. That are the things will influece human perception and maybe decision making. 
