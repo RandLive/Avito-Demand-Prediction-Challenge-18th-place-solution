@@ -21,7 +21,7 @@ import gc
 import datetime as dt
 
 
-debug = False
+debug = True
 
 print("loading data ...")
 
@@ -84,16 +84,16 @@ if debug == False: # Run
     del train_df['deal_probability']; gc.collect()
     test_df = pd.read_csv('../input/test.csv',  parse_dates = ["activation_date"])
     
-    train_pr = pd.read_csv('../input/periods_train.csv',  parse_dates = ['activation_date'], usecols=['item_id', 'activation_date', 'date_from', 'date_to'])
-    test_pr = pd.read_csv('../input/periods_test.csv',  parse_dates = ['activation_date'], usecols=['item_id', 'activation_date', 'date_from', 'date_to'])
+    train_pr = pd.read_csv('../input/periods_train.csv',  parse_dates = ['activation_date', 'date_from', 'date_to'])
+    test_pr = pd.read_csv('../input/periods_test.csv',  parse_dates = ['activation_date', 'date_from', 'date_to'])
 else: # debug
     train_df = pd.read_csv('../input/train.csv',  nrows=10000, parse_dates = ["activation_date"])
     y = train_df['deal_probability']
     del train_df['deal_probability']; gc.collect()
     test_df = pd.read_csv('../input/test.csv',  nrows=10000, parse_dates = ["activation_date"])
     
-    train_pr = pd.read_csv('../input/periods_train.csv',  nrows=10000, parse_dates = ['item_id', 'activation_date', 'date_from', 'date_to'])
-    test_pr = pd.read_csv('../input/periods_test.csv',  nrows=10000, parse_dates = ['item_id', 'activation_date', 'date_from', 'date_to'])
+    train_pr = pd.read_csv('../input/periods_train.csv',  nrows=10000, parse_dates = ['activation_date', 'date_from', 'date_to'])
+    test_pr = pd.read_csv('../input/periods_test.csv',  nrows=10000, parse_dates = ['activation_date', 'date_from', 'date_to'])
 
 
 train_index = len(train_df)
@@ -261,8 +261,8 @@ for index_train, index_valid in kf.split(y):
     )
        
     print("Model Evaluation Stage")
-    print('RMSE:', np.sqrt(metrics.mean_squared_error(y_valid, lgb_clf.predict(X_valid))))
-    lgpred = lgb_clf.predict(test)
+    print('RMSE:', np.sqrt(metrics.mean_squared_error(y_valid, lgb_clf.predict(X_valid, num_iteration=lgb_clf.best_iteration))))
+    lgpred = lgb_clf.predict(test, num_iteration=lgb_clf.best_iteration)
 
     lgpred += lgpred
     
