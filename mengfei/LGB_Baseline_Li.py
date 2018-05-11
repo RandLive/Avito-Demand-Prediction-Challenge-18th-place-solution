@@ -19,11 +19,16 @@ import lightgbm as lgb
 import matplotlib.pyplot as plt
 import gc
 import datetime as dt
+from sklearn.metrics import mean_squared_error
+from math import sqrt
 
 
-debug = True
+debug = False
 
 print("loading data ...")
+
+def rmse(predictions, targets):
+    return np.sqrt(((predictions - targets) ** 2).mean())
 
 def feature_Eng_Datetime(df):
     print('feature engineering -> datetime ...')
@@ -160,10 +165,10 @@ vectorizer = FeatureUnion([
             #max_features=7000,
             preprocessor=get_col('text_feat_p1_p2_p3'))),
                 
-        ('text_feat_p2_p3',CountVectorizer(
-            ngram_range=(1, 2),
-            #max_features=7000,
-            preprocessor=get_col('text_feat_p2_p3'))),
+#        ('text_feat_p2_p3',CountVectorizer(
+#            ngram_range=(1, 2),
+#            #max_features=7000,
+#            preprocessor=get_col('text_feat_p2_p3'))),
                 
         ('title',TfidfVectorizer(
             ngram_range=(1, 2),
@@ -176,6 +181,9 @@ ready_full_df = vectorizer.transform(full_df.to_dict('records'))
 tfvocab = vectorizer.get_feature_names()
 
 full_df.drop(textfeats, axis=1,inplace=True)
+#full_df.drop(['param_1','param_2','param_3'], axis=1,inplace=True)
+full_df.fillna(-10000, inplace=True)
+
 
 
 print("Modeling Stage ...")
@@ -194,15 +202,16 @@ gc.collect();
 
 
 cat_col = [
+           "user_id",
            "region", 
            "city", 
            "parent_category_name",
            "category_name", 
            "user_type", 
-#           "image_top_1",
+           "image_top_1",
            "param_1", 
            "param_2", 
-#           "param_3"
+           "param_3",
            ]
 
 # Begin trainning
@@ -240,12 +249,13 @@ for index_train, index_valid in kf.split(y):
         'verbose': 0, 
         
         'min_data':1,
-        'min_data_in_bin':1
+#        'min_data_in_bin':100
     } 
     
     lgtrain = lgb.Dataset(X_train, y_train,
                     feature_name=tfvocab,
                     categorical_feature = cat_col)
+    
     lgvalid = lgb.Dataset(X_valid, y_valid,
                     feature_name=tfvocab,
                     categorical_feature = cat_col)
@@ -257,11 +267,12 @@ for index_train, index_valid in kf.split(y):
         valid_sets=[lgtrain, lgvalid],
         valid_names=['train','valid'],
         early_stopping_rounds=200,
-        verbose_eval=50,       
+        verbose_eval=500,       
     )
        
     print("Model Evaluation Stage")
-    print('RMSE:', np.sqrt(metrics.mean_squared_error(y_valid, lgb_clf.predict(X_valid, num_iteration=lgb_clf.best_iteration))))
+    # TODO: 这一行为什么算出来的不一样?
+    print('RMSE:', np.sqrt(mean_squared_error(y_valid, lgb_clf.predict(X_valid, num_iteration=lgb_clf.best_iteration)) ))
     lgpred = lgb_clf.predict(test, num_iteration=lgb_clf.best_iteration)
 
     lgpred += lgpred
@@ -270,7 +281,6 @@ for index_train, index_valid in kf.split(y):
 
 
 lgpred /= n_folds
-
 
 lgsub = pd.DataFrame(lgpred,columns=["deal_probability"],index=test_index)
 lgsub['deal_probability'].clip(0.0, 1.0, inplace=True) # Between 0 and 1
