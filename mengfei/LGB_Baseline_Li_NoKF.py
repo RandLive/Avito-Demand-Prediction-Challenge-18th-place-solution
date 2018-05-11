@@ -23,7 +23,7 @@ from sklearn.metrics import mean_squared_error
 from math import sqrt
 
 
-debug = True
+debug = False
 
 print("loading data ...")
 
@@ -204,11 +204,11 @@ gc.collect();
 cat_col = [
            "user_id",
            "region", 
-#           "city", 
+           "city", 
            "parent_category_name",
            "category_name", 
            "user_type", 
-#           "image_top_1",
+           "image_top_1",
            "param_1", 
            "param_2", 
            "param_3",
@@ -223,16 +223,16 @@ X_train, X_valid, y_train, y_valid = train_test_split(
 
 lgbm_params =  {
     
-    'device' : 'gpu',
-    'gpu_platform_id' : -1,
-    'gpu_device_id' : -1,
+#    'device' : 'gpu',
+#    'gpu_platform_id' : -1,
+#    'gpu_device_id' : -1,
     'tree_method': 'feature',
     
     'num_threads': 3,
 
     'task': 'train',
     'boosting_type': 'gbdt',
-    'objective': 'regression',
+#    'objective': 'regression',
     'metric': 'rmse',
     'max_depth': 15,
     # 'num_leaves': 31,
@@ -242,7 +242,9 @@ lgbm_params =  {
     'learning_rate': 0.019,
     'verbose': 0, 
     
-    'min_data':1,
+    'application': 'rmse',
+    
+#    'min_data':1,
 #        'min_data_in_bin':100
 } 
 
@@ -286,3 +288,8 @@ ft[['feature','gain']].head(50).plot(kind='barh', x='feature', y='gain', legend=
 plt.gcf().savefig('features_importance.png')
 
 print("Done.")
+
+
+'''
+[15343] train's rmse: 0.194989  valid's rmse: 0.219975
+'''
