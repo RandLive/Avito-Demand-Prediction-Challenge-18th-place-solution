@@ -1,4 +1,7 @@
 import os; os.environ['OMP_NUM_THREADS'] = '1'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
 from contextlib import contextmanager
 from functools import partial
 from operator import itemgetter
@@ -21,7 +24,7 @@ from sklearn.model_selection import KFold
 def timer(name):
     t0 = time.time()
     yield
-    print(f'[{name}] done in {time.time() - t0:.0f} s')
+    print('[{}] done in {:.0f} s'.format(name,time.time() - t0))
 
 def preprocess(df: pd.DataFrame) -> pd.DataFrame:
     df['title'] = df['title'].fillna('')
@@ -48,7 +51,7 @@ def fit_predict(xs, y_train) -> np.ndarray:
         model = ks.Model(model_in, out)
         model.compile(loss=root_mean_squared_error, optimizer=ks.optimizers.Adam(lr=3e-3))
         for i in range(3):
-            with timer(f'epoch {i + 1}'):
+            with timer('epoch {}'.format(i + 1)):
                 model.fit(x=X_train, y=y_train, batch_size=2**(11 + i), epochs=1, verbose=0)
         return model.predict(X_test)[:, 0]
         
@@ -71,7 +74,7 @@ def main():
         train, valid = train.iloc[train_ids], train.iloc[valid_ids]
         y_train = y_scaler.fit_transform(np.log1p(train['deal_probability'].values.reshape(-1, 1)))
         X_train = vectorizer.fit_transform(preprocess(train)).astype(np.float32)
-        print(f'X_train: {X_train.shape} of {X_train.dtype}')
+        print('X_train: {} of {}'.format(X_train.shape,X_train.dtype))
         del train
     with timer('process valid'):
         X_valid = vectorizer.transform(preprocess(valid)).astype(np.float32)
