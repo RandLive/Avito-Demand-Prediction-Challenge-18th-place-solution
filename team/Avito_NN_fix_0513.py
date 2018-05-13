@@ -75,7 +75,7 @@ def main():
     
     with timer('process train'):
         print('read train data ...')
-        train = pd.read_csv('../input/train.csv', nrows=500000, parse_dates = ["activation_date"])
+        train = pd.read_csv('../input/train.csv', parse_dates = ["activation_date"])
 
 
 #        cv = KFold(n_splits=10, shuffle=True, random_state=42)
