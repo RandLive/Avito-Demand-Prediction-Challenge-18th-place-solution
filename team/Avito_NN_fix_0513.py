@@ -27,11 +27,11 @@ def timer(name):
 
 def preprocess(df: pd.DataFrame) -> pd.DataFrame:
     y_scaler = StandardScaler()
-    df['title'] = df['title'].fillna(' ')
-    df['user_type'] = df['user_type'].fillna(' ')
-    df['image_top_1'] = df['title'].fillna(' ')
-    df['desdescription'] = df['description'].fillna(' ')
-    df['text'] = (df['description'].fillna(' ') + ' ' + df['title'])
+    df['title'] = df['title'].fillna('отсутствуетописание')
+    df['user_type'] = df['user_type'].fillna('nodescription')
+    df['image_top_1'] = df['title'].fillna(-1000)
+    df['desdescription'] = df['description'].fillna('отсутствуетописание')
+    df['text'] = (df['description'].fillna('отсутствуетописание') + ' ' + df['title'])
     df['price'] = df['price'].fillna(-1000)
     df['price'] = y_scaler.fit_transform(df['price'].values.reshape(-1,1))
     return df[['title', 'text', 'price', 'user_type', 'image_top_1']]
