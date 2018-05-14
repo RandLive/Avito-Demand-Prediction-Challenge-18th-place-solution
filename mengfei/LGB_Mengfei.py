@@ -25,8 +25,8 @@ if debug == False:
     del train_df["deal_probability"]; gc.collect()
     test_df = pd.read_csv("../input/test.csv",  parse_dates = ["activation_date"])
 else:
-    train_df = pd.read_csv("../input/train.csv", parse_dates = ["activation_date"])
-    train_df = shuffle(train_df, random_state=1234); train_df = train_df.iloc[:100000]
+    train_df = pd.read_csv("../input/train.csv",  nrows=50000, parse_dates = ["activation_date"])
+    train_df = shuffle(train_df, random_state=1234); train_df = train_df.iloc[:50000]
     y = train_df["deal_probability"]
     del train_df["deal_probability"]; gc.collect()
     test_df = pd.read_csv("../input/test.csv",  nrows=1000, parse_dates = ["activation_date"])
@@ -41,17 +41,17 @@ def text_preprocessing(text):
     # hash words
     text = re.sub(r"(\\u[0-9A-Fa-f]+)",r"", text)
     # numbers
-    text = "".join([i for i in text if not i.isdigit()])
+#    text = "".join([i for i in text if not i.isdigit()])
     # punctuation
-    text = text.replace("(", " ")
-    text = text.replace(")", " ")
-    text = text.replace("-", "")
-    text = text.replace("–", "")
-    text = text.replace("/", "")
-    text = text.replace(",", "")
-    text = text.replace(".", "")
-    text = text.replace("   ", " ")
-    text = text.replace("  ", " ")
+#    text = text.replace("(", " ")
+#    text = text.replace(")", " ")
+#    text = text.replace("-", "")
+#    text = text.replace("–", "")
+#    text = text.replace("/", "")
+#    text = text.replace(",", "")
+#    text = text.replace(".", "")
+#    text = text.replace("   ", " ")
+#    text = text.replace("  ", " ")
     return text
 
 @contextmanager
@@ -64,12 +64,16 @@ def feature_engineering(df):
           str(row["param_2"]), str(row["param_3"])]),axis=1)
     
         df["text_feature_2"] = df.apply(lambda row: " ".join([str(row["param_2"]), str(row["param_3"])]),axis=1)
+        
+        df["title_description"] = df.apply(lambda row: " ".join([str(row["title"]), str(row["description"])]),axis=1)
        
         print("feature engineering -> preprocess text ...")       
         df["text_feature"] = df["text_feature"].apply(lambda x: text_preprocessing(x))
         df["text_feature_2"] = df["text_feature_2"].apply(lambda x: text_preprocessing(x))
         df["description"] = df["description"].apply(lambda x: text_preprocessing(x))
         df["title"] = df["title"].apply(lambda x: text_preprocessing(x))
+        df["title_description"] = df["title_description"].apply(lambda x: text_preprocessing(x))
+        
                  
     def Do_Datetime(df):
         print("feature engineering -> date time ...")
@@ -82,28 +86,29 @@ def feature_engineering(df):
         lbl = LabelEncoder()
         cat_col = ["user_id", "region", "city", "parent_category_name",
                "category_name", "user_type", "image_top_1",
-               "param_1", "param_2", "param_3"]
+               "param_1", "param_2", "param_3", "image"]
         for col in cat_col:
             df[col] = lbl.fit_transform(df[col].astype(str))
+        
     
     def Do_NA(df):
         print("feature engineering -> fill na ...")
-        df["price"] = np.log(df["price"]+0.001).astype("float32")
-        df["price"].fillna(-999,inplace=True)
-        df["image_top_1"].fillna(-999,inplace=True)
+#        df["price"] = np.log(df["price"]+0.001).astype("float32")
+        df["price"].fillna(-1,inplace=True)
+        df["image_top_1"].fillna("nicapotato",inplace=True)
         df["image"].fillna("noinformation",inplace=True)
-        df["param_1"].fillna("нетинформации",inplace=True)
-        df["param_2"].fillna("нетинформации",inplace=True)
-        df["param_3"].fillna("нетинформации",inplace=True)
-        df["title"].fillna("нетинформации",inplace=True)
-        df["description"].fillna("нетинформации",inplace=True)
+        df["param_1"].fillna("nicapotato",inplace=True)
+        df["param_2"].fillna("nicapotato",inplace=True)
+        df["param_3"].fillna("nicapotato",inplace=True)
+        df["title"].fillna("nicapotato",inplace=True)
+        df["description"].fillna("nicapotato",inplace=True)
              
     def Do_Drop(df):
-        df.drop(["activation_date", "item_id", "image"], axis=1, inplace=True)
+        df.drop(["activation_date", "item_id"], axis=1, inplace=True)
         
     def Do_Stat_Text(df):
         print("feature engineering -> statistics in text ...")
-        textfeats = ["text_feature","text_feature_2","description","title"]
+        textfeats = ["text_feature","text_feature_2","description", "title"]
         for col in textfeats:
             df[col + "_num_chars"] = df[col].apply(len) 
             df[col + "_num_words"] = df[col].apply(lambda comment: len(comment.split()))
@@ -143,12 +148,22 @@ def data_vectorize(df):
                     **tfidf_para,
                     preprocessor=get_col("description"))
                 ),
-            
+    
+            ("title_description",TfidfVectorizer(
+                    ngram_range=(1, 2),
+                    max_features=18000,
+                    **tfidf_para,
+                    preprocessor=get_col("title_description"))
+                ),
+    
+    
+    
+    
             ("text_feature",CountVectorizer(
                     ngram_range=(1, 2),
                     preprocessor=get_col("text_feature"))
                 ),
-    
+        
             ("title",TfidfVectorizer(
                     ngram_range=(1, 2),
                     **tfidf_para,
@@ -160,8 +175,8 @@ def data_vectorize(df):
     ready_full_df = vectorizer.transform(df.to_dict("records"))
     tfvocab = vectorizer.get_feature_names()
     
-    df.drop(["text_feature", "text_feature_2", "description","title"], axis=1, inplace=True)
-    df.fillna(-999, inplace=True)
+    df.drop(["text_feature", "text_feature_2", "description","title", "title_description"], axis=1, inplace=True)
+    df.fillna(-1, inplace=True)
      
     return df, ready_full_df, tfvocab
 
@@ -185,7 +200,7 @@ for shape in [X,test]:
 print("Feature Names Length: ",len(tfvocab))
 
 cat_col = [
-           "user_id",
+#           "user_id",
            "region", 
            "city", 
            "parent_category_name",
@@ -216,7 +231,7 @@ lgbm_params =  {
         # 'bagging_freq': 5,
         'learning_rate': 0.019,
         'verbose': 0,     
-        'application': 'rmse',
+#        'application': 'rmse',
         }
 
 lgtrain = lgb.Dataset(X_train, y_train,
@@ -236,15 +251,12 @@ lgb_clf = lgb.train(
         )
 
 print("Model Evaluation Stage")
-# TODO: 这一行为什么算出来的不一样?
 print( 'RMSE:', rmse(y_valid, lgb_clf.predict(X_valid, num_iteration=lgb_clf.best_iteration)) )
 lgpred = lgb_clf.predict(test, num_iteration=lgb_clf.best_iteration)
-
 
 lgsub = pd.DataFrame(lgpred,columns=["deal_probability"],index=sub_item_id)
 lgsub['deal_probability'].clip(0.0, 1.0, inplace=True) # Between 0 and 1
 lgsub.to_csv("lgsub.csv",index=True,header=True)
-
 
 print("Features importance...")
 bst = lgb_clf
@@ -257,9 +269,3 @@ ft[['feature','gain']].head(50).plot(kind='barh', x='feature', y='gain', legend=
 plt.gcf().savefig('features_importance.png')
 
 print("Done.")
-
-
-"""
-train_df.city.nunique() -> count non-unique values
-train_df.nunique() -> count all-unique values
-"""
