@@ -302,5 +302,5 @@ print("Done.")
 
 
 '''
-[15343] train's rmse: 0.194989  valid's rmse: 0.219975
+[16000]	train's rmse: 0.193696	valid's rmse: 0.219615
 '''
