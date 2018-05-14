@@ -3,21 +3,16 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.pipeline import FeatureUnion
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.model_selection import train_test_split
-from sklearn import metrics
 from scipy.sparse import hstack, csr_matrix
-from sklearn.model_selection import KFold
 import pandas as pd
 import numpy as np
 import lightgbm as lgb
 import matplotlib.pyplot as plt
 import gc, re
-import datetime as dt
-from sklearn.metrics import mean_squared_error
 from sklearn.utils import shuffle
-from math import sqrt
 from contextlib import contextmanager
 
-debug = True
+debug = False
 print("loading data ...")
 if debug == False:
     train_df = pd.read_csv("../input/train.csv",  parse_dates = ["activation_date"])
@@ -61,8 +56,7 @@ def feature_engineering(df):
         df["description"] = df["description"].apply(lambda x: text_preprocessing(x))
         df["title"] = df["title"].apply(lambda x: text_preprocessing(x))
         df["title_description"] = df["title_description"].apply(lambda x: text_preprocessing(x))
-        
-                 
+                       
     def Do_Datetime(df):
         print("feature engineering -> date time ...")
         df["wday"] = df["activation_date"].dt.weekday
