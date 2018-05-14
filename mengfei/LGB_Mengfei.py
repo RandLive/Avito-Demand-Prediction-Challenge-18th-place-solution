@@ -128,34 +128,29 @@ def data_vectorize(df):
                     max_features=18000,
                     **tfidf_para,
                     preprocessor=get_col("description"))
-                ),
-    
+                ),   
             ("title_description",TfidfVectorizer(
                     ngram_range=(1, 2),
                     max_features=18000,
                     **tfidf_para,
                     preprocessor=get_col("title_description"))
-                ),
-    
+                ),    
             ("text_feature",CountVectorizer(
                     ngram_range=(1, 2),
                     preprocessor=get_col("text_feature"))
-                ),
-        
+                ),        
             ("title",TfidfVectorizer(
                     ngram_range=(1, 2),
                     **tfidf_para,
                     preprocessor=get_col("title"))
                 ),
-    ])
-    
+    ])    
     vectorizer.fit(df.to_dict("records"))
     ready_full_df = vectorizer.transform(df.to_dict("records"))
     tfvocab = vectorizer.get_feature_names()
     
     df.drop(["text_feature", "text_feature_2", "description","title", "title_description"], axis=1, inplace=True)
-    df.fillna(-1, inplace=True)
-     
+    df.fillna(-1, inplace=True)     
     return df, ready_full_df, tfvocab
 
 full_df = pd.concat([train_df, test_df])
@@ -166,7 +161,6 @@ del train_df, test_df; gc.collect()
 feature_engineering(full_df)
 full_df, ready_full_df, tfvocab = data_vectorize(full_df)
 
-# --------------------------------------------------------------------------------------
 print("Modeling Stage ...")
 # Combine Dense Features with Sparse Text Bag of Words Features
 X = hstack([csr_matrix(full_df.iloc[:len_train]), ready_full_df[:len_train]]) # Sparse Matrix
@@ -189,9 +183,7 @@ cat_col = [
            "param_2", 
            "param_3",
            ]
-
 # Begin trainning
-
 X_train, X_valid, y_train, y_valid = train_test_split(
     X, y, test_size=0.10, random_state=23)
 
@@ -221,7 +213,7 @@ lgvalid = lgb.Dataset(X_valid, y_valid,
 lgb_clf = lgb.train(
         lgbm_params,
         lgtrain,
-        num_boost_round=16000,
+        num_boost_round=32000,
         valid_sets=[lgtrain, lgvalid],
         valid_names=['train','valid'],
         early_stopping_rounds=200,
