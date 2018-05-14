@@ -25,7 +25,7 @@ if debug == False:
     del train_df["deal_probability"]; gc.collect()
     test_df = pd.read_csv("../input/test.csv",  parse_dates = ["activation_date"])
 else:
-    train_df = pd.read_csv("../input/train.csv",  nrows=50000, parse_dates = ["activation_date"])
+    train_df = pd.read_csv("../input/train.csv", parse_dates = ["activation_date"])
     train_df = shuffle(train_df, random_state=1234); train_df = train_df.iloc[:50000]
     y = train_df["deal_probability"]
     del train_df["deal_probability"]; gc.collect()
@@ -40,18 +40,6 @@ def text_preprocessing(text):
     text = text.lower() 
     # hash words
     text = re.sub(r"(\\u[0-9A-Fa-f]+)",r"", text)
-    # numbers
-#    text = "".join([i for i in text if not i.isdigit()])
-    # punctuation
-#    text = text.replace("(", " ")
-#    text = text.replace(")", " ")
-#    text = text.replace("-", "")
-#    text = text.replace("–", "")
-#    text = text.replace("/", "")
-#    text = text.replace(",", "")
-#    text = text.replace(".", "")
-#    text = text.replace("   ", " ")
-#    text = text.replace("  ", " ")
     return text
 
 @contextmanager
@@ -89,8 +77,7 @@ def feature_engineering(df):
                "param_1", "param_2", "param_3", "image"]
         for col in cat_col:
             df[col] = lbl.fit_transform(df[col].astype(str))
-        
-    
+            
     def Do_NA(df):
         print("feature engineering -> fill na ...")
 #        df["price"] = np.log(df["price"]+0.001).astype("float32")
@@ -155,9 +142,6 @@ def data_vectorize(df):
                     **tfidf_para,
                     preprocessor=get_col("title_description"))
                 ),
-    
-    
-    
     
             ("text_feature",CountVectorizer(
                     ngram_range=(1, 2),
