@@ -15,99 +15,18 @@ from sklearn.externals import joblib
 
 debug = True
 print("loading data ...")
-used_cols = ["item_id", "user_id"]
 if debug == False:
     train_df = pd.read_csv("../input/train.csv",  parse_dates = ["activation_date"])
     y = train_df["deal_probability"]
     del train_df["deal_probability"]; gc.collect()
     test_df = pd.read_csv("../input/test.csv",  parse_dates = ["activation_date"])
-    # suppl
-    train_active = pd.read_csv("../input/train_active.csv", usecols=used_cols)
-    test_active = pd.read_csv("../input/test_active.csv", usecols=used_cols)
-    train_periods = pd.read_csv("../input/periods_train.csv", parse_dates=["date_from", "date_to"])
-    test_periods = pd.read_csv("../input/periods_test.csv", parse_dates=["date_from", "date_to"])
 else:
     train_df = pd.read_csv("../input/train.csv", parse_dates = ["activation_date"])
     train_df = shuffle(train_df, random_state=1234); train_df = train_df.iloc[:50000]
     y = train_df["deal_probability"]
     del train_df["deal_probability"]; gc.collect()
     test_df = pd.read_csv("../input/test.csv",  nrows=1000, parse_dates = ["activation_date"])
-    # suppl
-#    train_active = pd.read_csv("../input/train_active.csv", nrows=50000, usecols=used_cols)
-#    test_active = pd.read_csv("../input/test_active.csv", nrows=50000, usecols=used_cols)
-#    train_periods = pd.read_csv("../input/periods_train.csv", nrows=50000, parse_dates=["date_from", "date_to"])
-#    test_periods = pd.read_csv("../input/periods_test.csv", nrows=50000, parse_dates=["date_from", "date_to"])    
-    train_active = pd.read_csv("../input/train_active.csv", usecols=used_cols)
-    test_active = pd.read_csv("../input/test_active.csv", usecols=used_cols)
-    train_periods = pd.read_csv("../input/periods_train.csv", parse_dates=["date_from", "date_to"])
-    test_periods = pd.read_csv("../input/periods_test.csv", parse_dates=["date_from", "date_to"])
-print("loading data done!")
-# =============================================================================
-# Here Based on https://www.kaggle.com/bminixhofer/aggregated-features-lightgbm/code
-# =============================================================================
-print("merging supplimentary data ...")
-train_user_id = train_df["user_id"]
-train_item_id = train_df["item_id"]
 
-test_user_id = test_df["user_id"]
-test_item_id = test_df["item_id"]
-
-# select usefull rows
-train_active = train_active[train_active["user_id"].isin(train_user_id)]
-test_active = test_active[test_active["user_id"].isin(train_user_id)]
-train_active = train_active[train_active["item_id"].isin(train_user_id)]
-test_active = test_active[test_active["item_id"].isin(train_user_id)]
-
-train_periods = train_periods[train_periods["item_id"].isin(train_user_id)]
-test_periods = test_periods[test_periods["item_id"].isin(train_user_id)]
-gc.collect()
-
-all_samples = pd.concat([train_df,train_active,test_df,test_active]).reset_index(drop=True)
-all_samples.drop_duplicates(["item_id"], inplace=True)
-del train_active, test_active; gc.collect()
-
-all_periods = pd.concat([train_periods,test_periods])
-del train_periods, test_periods; gc.collect()
-
-all_periods["days_up"] = (all_periods["date_to"] - all_periods["date_from"]).dt.days
-gp = all_periods.groupby(["item_id"])[["days_up"]]
-
-gp_df = pd.DataFrame()
-gp_df["days_up_sum"] = gp.sum()["days_up"]
-gp_df["times_put_up"] = gp.count()["days_up"]
-gp_df.reset_index(inplace=True)
-gp_df.rename(index=str, columns={"index": "item_id"})
-
-all_periods.drop_duplicates(["item_id"], inplace=True)
-all_periods = all_periods.merge(gp_df, on="item_id", how="left")
-all_periods = all_periods.merge(all_samples, on="item_id", how="left")
-
-gp = all_periods.groupby(["user_id"])[["days_up_sum", "times_put_up"]].mean().reset_index()\
-.rename(index=str, columns={"days_up_sum": "avg_days_up_user",
-                            "times_put_up": "avg_times_up_user"})
-
-n_user_items = all_samples.groupby(["user_id"])[["item_id"]].count().reset_index() \
-.rename(index=str, columns={"item_id": "n_user_items"})
-gp = gp.merge(n_user_items, on="user_id", how="left")
-
-del all_samples, all_periods
-gc.collect()
-
-train_df = train_df.merge(gp, on="user_id", how="left")
-test_df = test_df.merge(gp, on="user_id", how="left")
-
-agg_cols = list(gp.columns)[1:]
-
-del gp; gc.collect()
-
-for col in agg_cols:
-    train_df[col].fillna(-1, inplace=True)
-    test_df[col].fillna(-1, inplace=True)
-
-print("merging supplimentary data done!")
-# =============================================================================
-# done! go to the normal steps
-# =============================================================================
 def rmse(predictions, targets):
     print("calculating RMSE ...")
     return np.sqrt(((predictions - targets) ** 2).mean())
@@ -121,7 +40,7 @@ def text_preprocessing(text):
 
 @contextmanager
 def feature_engineering(df):
-    # All the feature engineering here  
+    # All the feature engineering here
     
     def Do_Text_Hash(df):
         print("feature engineering -> hash text ...")
@@ -270,20 +189,20 @@ X_train, X_valid, y_train, y_valid = train_test_split(
     X, y, test_size=0.10, random_state=23)
 
 lgbm_params =  {
-        "tree_method": "feature",    
-        "num_threads": 3,
-        "task": "train",
-        "boosting_type": "gbdt",
-        "objective": "regression",
-        "metric": "rmse",
-        "max_depth": 15,
-        "num_leaves": 35,
-        "feature_fraction": 0.7,
-        "bagging_fraction": 0.8,
-        # "bagging_freq": 5,
-        "learning_rate": 0.019,
-        "verbose": 0,     
-#        "application": "rmse",
+        'tree_method': 'feature',    
+        'num_threads': 3,
+        'task': 'train',
+        'boosting_type': 'gbdt',
+        'objective': 'regression',
+        'metric': 'rmse',
+        'max_depth': 15,
+        'num_leaves': 35,
+        'feature_fraction': 0.7,
+        'bagging_fraction': 0.8,
+        # 'bagging_freq': 5,
+        'learning_rate': 0.019,
+        'verbose': 0,     
+#        'application': 'rmse',
         }
 
 lgtrain = lgb.Dataset(X_train, y_train,
@@ -297,37 +216,37 @@ lgb_clf = lgb.train(
         lgtrain,
         num_boost_round=32000,
         valid_sets=[lgtrain, lgvalid],
-        valid_names=["train","valid"],
+        valid_names=['train','valid'],
         early_stopping_rounds=200,
         verbose_eval=200,
         )
 
-print("save model ...")
-joblib.dump(lgb_clf, "lgb.pkl")
+print('save model ...')
+joblib.dump(lgb_clf, 'lgb.pkl')
 # load model
-#lgb_clf = joblib.load("lgb.pkl")
+#lgb_clf = joblib.load('lgb.pkl')
 
 print("Model Evaluation Stage")
-print( "RMSE:", rmse(y_valid, lgb_clf.predict(X_valid, num_iteration=lgb_clf.best_iteration)) )
+print( 'RMSE:', rmse(y_valid, lgb_clf.predict(X_valid, num_iteration=lgb_clf.best_iteration)) )
 lgpred = lgb_clf.predict(test, num_iteration=lgb_clf.best_iteration)
 
 lgsub = pd.DataFrame(lgpred,columns=["deal_probability"],index=sub_item_id)
-lgsub["deal_probability"].clip(0.0, 1.0, inplace=True) # Between 0 and 1
+lgsub['deal_probability'].clip(0.0, 1.0, inplace=True) # Between 0 and 1
 lgsub.to_csv("ml_lgb_sub.csv",index=True,header=True)
 
 print("Features importance...")
 bst = lgb_clf
-gain = bst.feature_importance("gain")
-ft = pd.DataFrame({"feature":bst.feature_name(), "split":bst.feature_importance("split"), "gain":100 * gain / gain.sum()}).sort_values("gain", ascending=False)
+gain = bst.feature_importance('gain')
+ft = pd.DataFrame({'feature':bst.feature_name(), 'split':bst.feature_importance('split'), 'gain':100 * gain / gain.sum()}).sort_values('gain', ascending=False)
 print(ft.head(50))
 
 plt.figure()
-ft[["feature","gain"]].head(50).plot(kind="barh", x="feature", y="gain", legend=False, figsize=(10, 20))
-plt.gcf().savefig("features_importance.png")
+ft[['feature','gain']].head(50).plot(kind='barh', x='feature', y='gain', legend=False, figsize=(10, 20))
+plt.gcf().savefig('features_importance.png')
 
 print("Done.")
 
 
-"""
-[15257] train"s rmse: 0.193474  valid"s rmse: 0.219508, LB: 0.2235
-"""
+'''
+[15257] train's rmse: 0.193474  valid's rmse: 0.219508, LB: 0.2235
+'''
