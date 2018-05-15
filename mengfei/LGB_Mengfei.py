@@ -267,7 +267,7 @@ cat_col = [
            ]
 # Begin trainning
 X_train, X_valid, y_train, y_valid = train_test_split(
-    X, y, test_size=0.10, random_state=23)
+    X, y, test_size=0.1, random_state=42) #23
 
 lgbm_params =  {
         "tree_method": "feature",    
@@ -282,9 +282,24 @@ lgbm_params =  {
         "bagging_fraction": 0.8,
         # "bagging_freq": 5,
         "learning_rate": 0.019,
-        "verbose": 0,     
+        "verbose": 0,
+        'lambda_l2':1,
 #        "application": "rmse",
         }
+
+#lgbm_params = {
+#    "tree_method": "feature",    
+#    "num_threads": 3,
+#    "tree_method": "feature", 
+#    "objective" : "regression",
+#    "metric" : "rmse",
+#    "num_leaves" : 32,
+#    "max_depth": 15,
+#    "learning_rate" : 0.019,
+#    "feature_fraction" : 0.65,
+#    "bagging_fraction": 0.8,
+#    "verbosity" : -1
+#}
 
 lgtrain = lgb.Dataset(X_train, y_train,
                 feature_name=tfvocab,
@@ -299,7 +314,7 @@ lgb_clf = lgb.train(
         valid_sets=[lgtrain, lgvalid],
         valid_names=["train","valid"],
         early_stopping_rounds=200,
-        verbose_eval=200,
+        verbose_eval=500, #200
         )
 
 print("save model ...")
@@ -329,5 +344,6 @@ print("Done.")
 
 
 """
-[15257] train"s rmse: 0.193474  valid"s rmse: 0.219508, LB: 0.2235
+[15538] train's rmse: 0.194794  valid's rmse: 0.219328
+[15257] train's rmse: 0.193474  valid's rmse: 0.219508 , LB: 0.2235
 """
