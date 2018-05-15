@@ -32,11 +32,7 @@ else:
     y = train_df["deal_probability"]
     del train_df["deal_probability"]; gc.collect()
     test_df = pd.read_csv("../input/test.csv",  nrows=1000, parse_dates = ["activation_date"])
-    # suppl
-#    train_active = pd.read_csv("../input/train_active.csv", nrows=50000, usecols=used_cols)
-#    test_active = pd.read_csv("../input/test_active.csv", nrows=50000, usecols=used_cols)
-#    train_periods = pd.read_csv("../input/periods_train.csv", nrows=50000, parse_dates=["date_from", "date_to"])
-#    test_periods = pd.read_csv("../input/periods_test.csv", nrows=50000, parse_dates=["date_from", "date_to"])    
+    # suppl 
     train_active = pd.read_csv("../input/train_active.csv", usecols=used_cols)
     test_active = pd.read_csv("../input/test_active.csv", usecols=used_cols)
     train_periods = pd.read_csv("../input/periods_train.csv", parse_dates=["date_from", "date_to"])
@@ -53,13 +49,13 @@ test_user_id = test_df["user_id"]
 test_item_id = test_df["item_id"]
 
 # select usefull rows
-train_active = train_active[train_active["user_id"].isin(train_user_id)]
-test_active = test_active[test_active["user_id"].isin(train_user_id)]
-train_active = train_active[train_active["item_id"].isin(train_user_id)]
-test_active = test_active[test_active["item_id"].isin(train_user_id)]
-
-train_periods = train_periods[train_periods["item_id"].isin(train_user_id)]
-test_periods = test_periods[test_periods["item_id"].isin(train_user_id)]
+#train_active = train_active[train_active["user_id"].isin(train_user_id)]
+#test_active = test_active[test_active["user_id"].isin(train_user_id)]
+#train_active = train_active[train_active["item_id"].isin(train_user_id)]
+#test_active = test_active[test_active["item_id"].isin(train_user_id)]
+#
+#train_periods = train_periods[train_periods["item_id"].isin(train_user_id)]
+#test_periods = test_periods[test_periods["item_id"].isin(train_user_id)]
 gc.collect()
 
 all_samples = pd.concat([train_df,train_active,test_df,test_active]).reset_index(drop=True)
@@ -314,7 +310,7 @@ lgb_clf = lgb.train(
         valid_sets=[lgtrain, lgvalid],
         valid_names=["train","valid"],
         early_stopping_rounds=200,
-        verbose_eval=500, #200
+        verbose_eval=100, #200
         )
 
 print("save model ...")
@@ -344,6 +340,6 @@ print("Done.")
 
 
 """
-[15538] train's rmse: 0.194794  valid's rmse: 0.219328
-[15257] train's rmse: 0.193474  valid's rmse: 0.219508 , LB: 0.2235
+[15538] train's rmse: 0.194794  valid's rmse: 0.219328 , LB: 0.2236-
+[15257] train's rmse: 0.193474  valid's rmse: 0.219508 , LB: 0.2235+
 """
