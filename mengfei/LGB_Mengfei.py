@@ -13,7 +13,7 @@ from sklearn.utils import shuffle
 from contextlib import contextmanager
 from sklearn.externals import joblib
 
-debug = True
+debug = False
 print("loading data ...")
 used_cols = ["item_id", "user_id"]
 if debug == False:
@@ -90,7 +90,7 @@ n_user_items = all_samples.groupby(["user_id"])[["item_id"]].count().reset_index
 .rename(index=str, columns={"item_id": "n_user_items"})
 gp = gp.merge(n_user_items, on="user_id", how="left")
 
-del all_samples, all_periods
+del all_samples, all_periods, n_user_items
 gc.collect()
 
 train_df = train_df.merge(gp, on="user_id", how="left")
