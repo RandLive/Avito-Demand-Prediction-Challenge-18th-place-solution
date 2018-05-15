@@ -13,7 +13,7 @@ from sklearn.utils import shuffle
 from contextlib import contextmanager
 from sklearn.externals import joblib
 
-debug = True
+debug = False
 print("loading data ...")
 if debug == False:
     train_df = pd.read_csv("../input/train.csv",  parse_dates = ["activation_date"])
@@ -186,7 +186,7 @@ cat_col = [
            ]
 # Begin trainning
 X_train, X_valid, y_train, y_valid = train_test_split(
-    X, y, test_size=0.10, random_state=23)
+    X, y, test_size=0.10, random_state=42) #23
 
 lgbm_params =  {
         'tree_method': 'feature',    
