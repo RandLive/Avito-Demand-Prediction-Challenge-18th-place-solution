@@ -33,10 +33,10 @@ else:
     del train_df["deal_probability"]; gc.collect()
     test_df = pd.read_csv("../input/test.csv",  nrows=1000, parse_dates = ["activation_date"])
     # suppl 
-    train_active = pd.read_csv("../input/train_active.csv", usecols=used_cols)
-    test_active = pd.read_csv("../input/test_active.csv", usecols=used_cols)
-    train_periods = pd.read_csv("../input/periods_train.csv", parse_dates=["date_from", "date_to"])
-    test_periods = pd.read_csv("../input/periods_test.csv", parse_dates=["date_from", "date_to"])
+    train_active = pd.read_csv("../input/train_active.csv", nrows=1000, usecols=used_cols)
+    test_active = pd.read_csv("../input/test_active.csv", nrows=1000, usecols=used_cols)
+    train_periods = pd.read_csv("../input/periods_train.csv", nrows=1000, parse_dates=["date_from", "date_to"])
+    test_periods = pd.read_csv("../input/periods_test.csv", nrows=1000, parse_dates=["date_from", "date_to"])
 print("loading data done!")
 # =============================================================================
 # Here Based on https://www.kaggle.com/bminixhofer/aggregated-features-lightgbm/code
@@ -47,15 +47,6 @@ train_item_id = train_df["item_id"]
 
 test_user_id = test_df["user_id"]
 test_item_id = test_df["item_id"]
-
-# select usefull rows
-#train_active = train_active[train_active["user_id"].isin(train_user_id)]
-#test_active = test_active[test_active["user_id"].isin(train_user_id)]
-#train_active = train_active[train_active["item_id"].isin(train_user_id)]
-#test_active = test_active[test_active["item_id"].isin(train_user_id)]
-#
-#train_periods = train_periods[train_periods["item_id"].isin(train_user_id)]
-#test_periods = test_periods[test_periods["item_id"].isin(train_user_id)]
 gc.collect()
 
 all_samples = pd.concat([train_df,train_active,test_df,test_active]).reset_index(drop=True)
@@ -194,19 +185,18 @@ def data_vectorize(df):
     "sublinear_tf": True,
     "dtype": np.float32,
     "norm": "l2",
-    #"min_df":5,
-    #"max_df":.9,
     "smooth_idf":False
     }
     def get_col(col_name): return lambda x: x[col_name]
     vectorizer = FeatureUnion([
             
             ("description",TfidfVectorizer(
-                    ngram_range=(1, 2),
-                    max_features=18000,
+                    ngram_range=(1, 1),
+                    max_features=36000,
                     **tfidf_para,
                     preprocessor=get_col("description"))
                 ),   
+             # 0.235195
             ("title_description",TfidfVectorizer(
                     ngram_range=(1, 2),
                     max_features=18000,
@@ -216,7 +206,7 @@ def data_vectorize(df):
             ("text_feature",CountVectorizer(
                     ngram_range=(1, 2),
                     preprocessor=get_col("text_feature"))
-                ),        
+                ),  
             ("title",TfidfVectorizer(
                     ngram_range=(1, 2),
                     **tfidf_para,
@@ -324,10 +314,6 @@ print("Done.")
 
 
 """
-
 [100]   train's rmse: 0.229369  valid's rmse: 0.229964
 [12196] train's rmse: 0.195521  valid's rmse: 0.21786, LB: 2230
-
-[15538] train's rmse: 0.194794  valid's rmse: 0.219328 , LB: 0.2236-
-[15257] train's rmse: 0.193474  valid's rmse: 0.219508 , LB: 0.2235+
 """
