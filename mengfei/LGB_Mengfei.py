@@ -276,26 +276,10 @@ lgbm_params =  {
         "num_leaves": 35,
         "feature_fraction": 0.7,
         "bagging_fraction": 0.8,
-        # "bagging_freq": 5,
         "learning_rate": 0.019,
         "verbose": 0,
         'lambda_l2':1,
-#        "application": "rmse",
         }
-
-#lgbm_params = {
-#    "tree_method": "feature",    
-#    "num_threads": 3,
-#    "tree_method": "feature", 
-#    "objective" : "regression",
-#    "metric" : "rmse",
-#    "num_leaves" : 32,
-#    "max_depth": 15,
-#    "learning_rate" : 0.019,
-#    "feature_fraction" : 0.65,
-#    "bagging_fraction": 0.8,
-#    "verbosity" : -1
-#}
 
 lgtrain = lgb.Dataset(X_train, y_train,
                 feature_name=tfvocab,
@@ -309,7 +293,7 @@ lgb_clf = lgb.train(
         num_boost_round=32000,
         valid_sets=[lgtrain, lgvalid],
         valid_names=["train","valid"],
-        early_stopping_rounds=200,
+        early_stopping_rounds=500,
         verbose_eval=100, #200
         )
 
@@ -342,7 +326,7 @@ print("Done.")
 """
 
 [100]   train's rmse: 0.229369  valid's rmse: 0.229964
-[12196] train's rmse: 0.195521  valid's rmse: 0.21786
+[12196] train's rmse: 0.195521  valid's rmse: 0.21786, LB: 2230
 
 [15538] train's rmse: 0.194794  valid's rmse: 0.219328 , LB: 0.2236-
 [15257] train's rmse: 0.193474  valid's rmse: 0.219508 , LB: 0.2235+
