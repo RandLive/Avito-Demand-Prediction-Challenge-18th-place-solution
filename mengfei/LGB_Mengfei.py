@@ -152,7 +152,7 @@ def feature_engineering(df):
             
     def Do_NA(df):
         print("feature engineering -> fill na ...")
-#        df["price"] = np.log(df["price"]+0.001).astype("float32")
+        df["price"] = np.log(df["price"]+0.001).astype("float32")
         df["price"].fillna(-1,inplace=True)
         df["image_top_1"].fillna("nicapotato",inplace=True)
         df["image"].fillna("noinformation",inplace=True)
@@ -340,6 +340,10 @@ print("Done.")
 
 
 """
+
+[100]   train's rmse: 0.229369  valid's rmse: 0.229964
+[12196] train's rmse: 0.195521  valid's rmse: 0.21786
+
 [15538] train's rmse: 0.194794  valid's rmse: 0.219328 , LB: 0.2236-
 [15257] train's rmse: 0.193474  valid's rmse: 0.219508 , LB: 0.2235+
 """
