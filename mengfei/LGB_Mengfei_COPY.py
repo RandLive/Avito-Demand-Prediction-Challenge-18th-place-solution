@@ -33,30 +33,14 @@ else:
     del train_df["deal_probability"]; gc.collect()
     test_df = pd.read_csv("../input/test.csv",  nrows=1000, parse_dates = ["activation_date"])
     # suppl 
-    train_active = pd.read_csv("../input/train_active.csv", usecols=used_cols)
-    test_active = pd.read_csv("../input/test_active.csv", usecols=used_cols)
-    train_periods = pd.read_csv("../input/periods_train.csv", parse_dates=["date_from", "date_to"])
-    test_periods = pd.read_csv("../input/periods_test.csv", parse_dates=["date_from", "date_to"])
+    train_active = pd.read_csv("../input/train_active.csv",  nrows=1000, usecols=used_cols)
+    test_active = pd.read_csv("../input/test_active.csv",  nrows=1000, usecols=used_cols)
+    train_periods = pd.read_csv("../input/periods_train.csv",  nrows=1000, parse_dates=["date_from", "date_to"])
+    test_periods = pd.read_csv("../input/periods_test.csv",  nrows=1000, parse_dates=["date_from", "date_to"])
 print("loading data done!")
 # =============================================================================
 # Here Based on https://www.kaggle.com/bminixhofer/aggregated-features-lightgbm/code
 # =============================================================================
-print("merging supplimentary data ...")
-train_user_id = train_df["user_id"]
-train_item_id = train_df["item_id"]
-
-test_user_id = test_df["user_id"]
-test_item_id = test_df["item_id"]
-
-# select usefull rows
-#train_active = train_active[train_active["user_id"].isin(train_user_id)]
-#test_active = test_active[test_active["user_id"].isin(train_user_id)]
-#train_active = train_active[train_active["item_id"].isin(train_user_id)]
-#test_active = test_active[test_active["item_id"].isin(train_user_id)]
-#
-#train_periods = train_periods[train_periods["item_id"].isin(train_user_id)]
-#test_periods = test_periods[test_periods["item_id"].isin(train_user_id)]
-gc.collect()
 
 all_samples = pd.concat([train_df,train_active,test_df,test_active]).reset_index(drop=True)
 all_samples.drop_duplicates(["item_id"], inplace=True)
@@ -113,6 +97,12 @@ def text_preprocessing(text):
     text = text.lower() 
     # hash words
     text = re.sub(r"(\\u[0-9A-Fa-f]+)",r"", text)
+    
+    # https://www.kaggle.com/demery/lightgbm-with-ridge-feature/code
+    text = " ".join(map(str.strip, re.split('(\d+)',text)))
+    regex = re.compile(u'[^[:alpha:]]')
+    text = regex.sub(" ", text)
+    text = " ".join(text.split())
     return text
 
 @contextmanager
@@ -149,7 +139,9 @@ def feature_engineering(df):
         for col in cat_col:
             df[col] = lbl.fit_transform(df[col].astype(str))
             gc.collect()
-            
+    
+    import string
+    count = lambda l1,l2: sum([1 for x in l1 if x in l2])         
     def Do_NA(df):
         print("feature engineering -> fill na ...")
         df["price"] = np.log(df["price"]+0.001).astype("float32")
@@ -161,6 +153,7 @@ def feature_engineering(df):
         df["param_3"].fillna("nicapotato",inplace=True)
         df["title"].fillna("nicapotato",inplace=True)
         df["description"].fillna("nicapotato",inplace=True)
+        df['num_desc_punct'] = df['description'].apply(lambda x: count(x, set(string.punctuation)))
              
     def Do_Drop(df):
         df.drop(["activation_date", "item_id"], axis=1, inplace=True)
