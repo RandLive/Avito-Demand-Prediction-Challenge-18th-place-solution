@@ -30,7 +30,7 @@ if debug == False:
     test_periods = pd.read_csv("../input/periods_test.csv", parse_dates=["date_from", "date_to"])
 else:
     train_df = pd.read_csv("../input/train.csv", parse_dates = ["activation_date"])
-    train_df = shuffle(train_df, random_state=1234); train_df = train_df.iloc[:5000]
+    train_df = shuffle(train_df, random_state=1234); train_df = train_df.iloc[:50000]
     y = train_df["deal_probability"]
     del train_df["deal_probability"]; gc.collect()
     test_df = pd.read_csv("../input/test.csv",  nrows=1000, parse_dates = ["activation_date"])
@@ -245,21 +245,22 @@ class SklearnWrapper(object):
 NFOLDS = 5
 SEED = 42
 def get_oof(clf, x_train, y, x_test):
+    
+    
+        
     oof_train = np.zeros((len_train,))
     oof_test = np.zeros((len_test,))
     oof_test_skf = np.empty((NFOLDS, len_test))
 
     for i, (train_index, test_index) in enumerate(kf):
-        print('\nFold {}'.format(i))
-        x_tr = x_train[train_index]
+        print('Ridege oof Fold {}'.format(i))
+        x_tr = x_train[train_index]       
+        y = np.array(y)
         y_tr = y[train_index]
-        x_te = x_train[test_index]
-        
-        clf.train(x_tr, y_tr)
-
-        oof_train[test_index] = clf.predict(x_te)
+        x_te = x_train[test_index]      
+        clf.train(x_tr, y_tr)       
+        oof_train[test_index] = clf.predict(x_te)        
         oof_test_skf[i, :] = clf.predict(x_test)
-
     oof_test[:] = oof_test_skf.mean(axis=0)
     return oof_train.reshape(-1, 1), oof_test.reshape(-1, 1)
 
@@ -279,9 +280,11 @@ full_df, ready_full_df, tfvocab = data_vectorize(full_df)
 ridge_params = {'alpha':20.0, 'fit_intercept':True, 'normalize':False, 'copy_X':True,
                 'max_iter':None, 'tol':0.001, 'solver':'auto', 'random_state':SEED}
 ridge = SklearnWrapper(clf=Ridge, seed = SEED, params = ridge_params)
-ridge_oof_train, ridge_oof_test = get_oof(ridge, ready_full_df[:len_train], y, ready_full_df[len_train:])
+ready_df = ready_full_df
+ridge_oof_train, ridge_oof_test = get_oof(ridge, ready_df[:len_train], y, ready_df[len_train:])
 
 ridge_preds = np.concatenate([ridge_oof_train, ridge_oof_test])
+full_df['ridge_preds'] = ridge_preds
 
 print("Modeling Stage ...")
 # Combine Dense Features with Sparse Text Bag of Words Features
