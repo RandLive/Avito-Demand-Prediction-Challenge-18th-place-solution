@@ -317,10 +317,9 @@ print("Done.")
 
 
 """
+[100]   train's rmse: 0.229385  valid's rmse: 0.229983
+[17726] train's rmse: 0.189219  valid's rmse: 0.21758, LB: 0.2228
 
 [100]   train's rmse: 0.229369  valid's rmse: 0.229964
-[12196] train's rmse: 0.195521  valid's rmse: 0.21786, LB: 2230
-
-[15538] train's rmse: 0.194794  valid's rmse: 0.219328 , LB: 0.2236-
-[15257] train's rmse: 0.193474  valid's rmse: 0.219508 , LB: 0.2235+
+[12196] train's rmse: 0.195521  valid's rmse: 0.21786, LB: 0.2230
 """
