@@ -366,14 +366,18 @@ cat_col = [
            ]
 
 rmse_sume = 0.
-for numIter in range (0,5):
+
+kf = KFold(n_splits=5, random_state=42, shuffle=True)
+
+for train_index, test_index in kf.split(X):
       
-      print("in current loop of:", numIter)
+#       print("in current loop of:", numIter)
 
       # Begin trainning
-      X_train, X_valid, y_train, y_valid = train_test_split(
-          X, y, test_size=0.1, random_state=42+numIter) #23
-      
+#       X_train, X_valid, y_train, y_valid = train_test_split(
+#           X, y, test_size=0.1, random_state=42+numIter) #23
+      X_train, X_valid = X[train_index], X[test_index]
+      y_train, y_valid = y[train_index], y[test_index]
       lgbm_params =  {
               "tree_method": "feature",    
               "num_threads": 3,
