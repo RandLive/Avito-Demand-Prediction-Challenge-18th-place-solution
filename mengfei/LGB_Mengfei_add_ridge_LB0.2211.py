@@ -368,9 +368,9 @@ cat_col = [
 rmse_sume = 0.
 
 kf = KFold(n_splits=5, random_state=42, shuffle=True)
-
+numIter = -1
 for train_index, test_index in kf.split(X):
-      
+      numIter +=1
 #       print("in current loop of:", numIter)
 
       # Begin trainning
