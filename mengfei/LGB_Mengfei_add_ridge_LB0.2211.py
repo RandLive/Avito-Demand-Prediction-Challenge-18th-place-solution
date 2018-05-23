@@ -15,7 +15,7 @@ from sklearn.utils import shuffle
 from contextlib import contextmanager
 from sklearn.externals import joblib
 
-debug = False
+debug = True
 print("loading data ...")
 used_cols = ["item_id", "user_id"]
 if debug == False:
@@ -367,17 +367,14 @@ cat_col = [
 
 rmse_sume = 0.
 
+from sklearn.model_selection import KFold
 kf = KFold(n_splits=5, random_state=42, shuffle=True)
-numIter = -1
-for train_index, test_index in kf.split(X):
-      numIter +=1
-#       print("in current loop of:", numIter)
+numIter = 0
+for train_index, test_index in kf.split(y):
+      print("in current loop of:", numIter)
 
-      # Begin trainning
-#       X_train, X_valid, y_train, y_valid = train_test_split(
-#           X, y, test_size=0.1, random_state=42+numIter) #23
-      X_train, X_valid = X[train_index], X[test_index]
-      y_train, y_valid = y[train_index], y[test_index]
+      X_train, X_valid = X.tocsr()[train_index], X.tocsr()[test_index]
+      y_train, y_valid = y.iloc[train_index], y.iloc[test_index]
       lgbm_params =  {
               "tree_method": "feature",    
               "num_threads": 3,
@@ -425,6 +422,11 @@ for train_index, test_index in kf.split(X):
       lgsub.to_csv("ml_lgb_sub_{}.csv".format(numIter),index=True,header=True)
 
       rmse_sume += rmse(y_valid, lgb_clf.predict(X_valid, num_iteration=lgb_clf.best_iteration))
+      
+      numIter += 1
+      
+      del X_train, X_valid, y_train, y_valid, lgtrain, lgvalid
+      gc.collect()
 
 print("mean rmse is:", rmse_sume/5)
       
