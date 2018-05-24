@@ -1,0 +1,42 @@
+
+    #TODO################################################
+    tmp = df_train.groupby(["parent_category_name"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_parent_category_name'})     
+    df = pd.merge(df, tmp, how='left', on=["parent_category_name"])
+    df2['median_deal_probability_parent_category_name'] = df['median_deal_probability_parent_category_name']
+    
+    tmp = df_train.groupby(["category_name"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_category_name'})     
+    df = pd.merge(df, tmp, how='left', on=["category_name"])
+    df2['median_deal_probability_category_name'] = df['median_deal_probability_category_name']
+    
+    tmp = df_train.groupby(["user_type"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_user_type'})     
+    df = pd.merge(df, tmp, how='left', on=["user_type"])
+    df2['median_deal_probability_user_type'] = df['median_deal_probability_user_type']
+    
+    tmp = df_train.groupby(["image_top_1"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_image_top_1'})     
+    df = pd.merge(df, tmp, how='left', on=["image_top_1"])
+    df2['median_deal_probability_image_top_1'] = df['median_deal_probability_image_top_1']
+    
+    tmp = df_train.groupby(["param_1"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_param_1'})     
+    df = pd.merge(df, tmp, how='left', on=["param_1"])
+    df2['median_deal_probability_param_1'] = df['median_deal_probability_param_1']
+    
+    tmp = df_train.groupby(["param_2"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_param_2'})     
+    df = pd.merge(df, tmp, how='left', on=["param_2"])
+    df2['median_deal_probability_param_2'] = df['median_deal_probability_param_2']
+
+
+
+Training until validation scores don't improve for 200 rounds.
+[100]	train's rmse: 0.217858	valid's rmse: 0.222371
+[200]	train's rmse: 0.210393	valid's rmse: 0.219173
+[300]	train's rmse: 0.205909	valid's rmse: 0.218278
+[400]	train's rmse: 0.202338	valid's rmse: 0.217717
+[500]	train's rmse: 0.199511	valid's rmse: 0.2174
+[600]	train's rmse: 0.197043	valid's rmse: 0.217213
+[700]	train's rmse: 0.194863	valid's rmse: 0.217041
+[800]	train's rmse: 0.192984	valid's rmse: 0.216938
+[900]	train's rmse: 0.191193	valid's rmse: 0.21685
+[1000]	train's rmse: 0.189568	valid's rmse: 0.216786
+[1100]	train's rmse: 0.188087	valid's rmse: 0.216736
+[1200]	train's rmse: 0.186701	valid's rmse: 0.216703
+[1300]	train's rmse: 0.185297	valid's rmse: 0.216684
