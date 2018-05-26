@@ -1,0 +1,63 @@
+Loading pickled data
+Load model ...
+Model Evaluation Stage
+calculating RMSE ...
+RMSE: 0.21545041070694326
+/home/qifeng/anaconda3/lib/python3.6/site-packages/lightgbm/basic.py:447: UserWarning: Converting data to scipy sparse matrix.
+  warnings.warn('Converting data to scipy sparse matrix.')
+calculating RMSE ...
+mean rmse is: 0.04309008214138865
+Features importance...
+                                   feature       gain  split
+60                           ridge_preds_2  15.309960  17824
+5                              image_top_1   9.557571  75926
+8                                  param_1   7.428586  28111
+2                            category_name   5.429190  14350
+3                                     city   5.302594  57930
+59                           ridge_preds_1   2.338080  17230
+9                                  param_2   2.268143  13967
+49                                  price+   2.059001  20380
+10                                 param_3   1.808142  14445
+13                                  region   1.766480  33377
+7                             n_user_items   1.747281  13107
+12                                   price   1.616428  15846
+11                    parent_category_name   1.539583   3184
+0                         avg_days_up_user   1.106607  14365
+14                                 user_id   0.982040  11184
+6                          item_seq_number   0.843799  15980
+1                        avg_times_up_user   0.642525   9870
+4                                    image   0.623761  17621
+41                   description_num_chars   0.490235  14390
+50                        item_seq_number+   0.457753   5380
+33                  text_feature_num_chars   0.383382   6005
+42                   description_num_words   0.371290  10644
+43            description_num_unique_words   0.359556   9584
+35           text_feature_num_unique_words   0.348043   2230
+45                         title_num_chars   0.342135  10273
+15                               user_type   0.323501   2079
+16                          num_desc_punct   0.310714   8141
+15063               description__состоянии   0.263121   4573
+37                text_feature_2_num_chars   0.252461   2498
+38                text_feature_2_num_words   0.245981   1001
+44             description_words_vs_unique   0.244232   8008
+39730              text_feature__перевозки   0.213400    143
+40397    text_feature__транспорт_перевозки   0.212681     95
+39         text_feature_2_num_unique_words   0.195603   1263
+51          median_deal_probability_price+   0.186971   2448
+33138         title_description__состоянии   0.174939   4497
+30784            title_description__продам   0.165652   4436
+33108         title_description__состояние   0.158578   2904
+46                         title_num_words   0.158343   4713
+36            text_feature_words_vs_unique   0.151066   2313
+12590                  description__продам   0.143922   3647
+40069   text_feature__ремонт_строительство   0.142907     70
+28946             title_description__отдам   0.138813   1410
+32                                    wday   0.128039   5511
+37568             text_feature__nicapotato   0.125150    768
+47                  title_num_unique_words   0.122435   3717
+21541                 title_description__б   0.121612   1944
+37569  text_feature__nicapotato_nicapotato   0.119177    310
+39496                     text_feature__на   0.118436     74
+22151         title_description__велосипед   0.116226    917
+Done.
+
