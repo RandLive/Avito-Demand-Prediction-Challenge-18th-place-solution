@@ -1,0 +1,211 @@
+
+    #TODO################################################
+    tmp = df_train.groupby(["parent_category_name"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_parent_category_name'})     
+    df = pd.merge(df, tmp, how='left', on=["parent_category_name"])
+    df2['median_deal_probability_parent_category_name'] = df['median_deal_probability_parent_category_name']
+    
+    tmp = df_train.groupby(["category_name"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_category_name'})     
+    df = pd.merge(df, tmp, how='left', on=["category_name"])
+    df2['median_deal_probability_category_name'] = df['median_deal_probability_category_name']
+    
+    tmp = df_train.groupby(["user_type"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_user_type'})     
+    df = pd.merge(df, tmp, how='left', on=["user_type"])
+    df2['median_deal_probability_user_type'] = df['median_deal_probability_user_type']
+    
+    tmp = df_train.groupby(["image_top_1"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_image_top_1'})     
+    df = pd.merge(df, tmp, how='left', on=["image_top_1"])
+    df2['median_deal_probability_image_top_1'] = df['median_deal_probability_image_top_1']
+    
+    tmp = df_train.groupby(["param_1"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_param_1'})     
+    df = pd.merge(df, tmp, how='left', on=["param_1"])
+    df2['median_deal_probability_param_1'] = df['median_deal_probability_param_1']
+    
+    tmp = df_train.groupby(["param_2"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_param_2'})     
+    df = pd.merge(df, tmp, how='left', on=["param_2"])
+    df2['median_deal_probability_param_2'] = df['median_deal_probability_param_2']
+
+
+
+Training until validation scores don't improve for 200 rounds.
+[100]	train's rmse: 0.217858	valid's rmse: 0.222371
+[200]	train's rmse: 0.210393	valid's rmse: 0.219173
+[300]	train's rmse: 0.205909	valid's rmse: 0.218278
+[400]	train's rmse: 0.202338	valid's rmse: 0.217717
+[500]	train's rmse: 0.199511	valid's rmse: 0.2174
+[600]	train's rmse: 0.197043	valid's rmse: 0.217213
+[700]	train's rmse: 0.194863	valid's rmse: 0.217041
+[800]	train's rmse: 0.192984	valid's rmse: 0.216938
+[900]	train's rmse: 0.191193	valid's rmse: 0.21685
+[1000]	train's rmse: 0.189568	valid's rmse: 0.216786
+[1100]	train's rmse: 0.188087	valid's rmse: 0.216736
+[1200]	train's rmse: 0.186701	valid's rmse: 0.216703
+[1300]	train's rmse: 0.185297	valid's rmse: 0.216684
+
+----------------------------------------------------------------------------------------------------------------------
+#    tmp = df_train.groupby(["parent_category_name"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_parent_category_name'})     
+#    df = pd.merge(df, tmp, how='left', on=["parent_category_name"])
+#    df2['median_deal_probability_parent_category_name'] = df['median_deal_probability_parent_category_name']
+    
+    tmp = df_train.groupby(["category_name"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_category_name'})     
+    df = pd.merge(df, tmp, how='left', on=["category_name"])
+    df2['median_deal_probability_category_name'] = df['median_deal_probability_category_name']
+    
+#    tmp = df_train.groupby(["user_type"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_user_type'})     
+#    df = pd.merge(df, tmp, how='left', on=["user_type"])
+#    df2['median_deal_probability_user_type'] = df['median_deal_probability_user_type']
+    
+    tmp = df_train.groupby(["image_top_1"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_image_top_1'})     
+    df = pd.merge(df, tmp, how='left', on=["image_top_1"])
+    df2['median_deal_probability_image_top_1'] = df['median_deal_probability_image_top_1']
+    
+    tmp = df_train.groupby(["param_1"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_param_1'})     
+    df = pd.merge(df, tmp, how='left', on=["param_1"])
+    df2['median_deal_probability_param_1'] = df['median_deal_probability_param_1']
+    
+    tmp = df_train.groupby(["param_2"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_param_2'})     
+    df = pd.merge(df, tmp, how='left', on=["param_2"])
+    df2['median_deal_probability_param_2'] = df['median_deal_probability_param_2']
+
+
+Training until validation scores don't improve for 200 rounds.
+[100]	train's rmse: 0.217858	valid's rmse: 0.222371
+
+-----------------------------------------------------------------------------------------------------------
+all_periods["days_wait"] = (all_periods["date_from"] - all_periods["activation_date"]).dt.days
+
+#    tmp = df_train.groupby(["parent_category_name"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_parent_category_name'})     
+#    df = pd.merge(df, tmp, how='left', on=["parent_category_name"])
+#    df2['median_deal_probability_parent_category_name'] = df['median_deal_probability_parent_category_name']
+    
+#    tmp = df_train.groupby(["category_name"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_category_name'})     
+#    df = pd.merge(df, tmp, how='left', on=["category_name"])
+#    df2['median_deal_probability_category_name'] = df['median_deal_probability_category_name']
+    
+#    tmp = df_train.groupby(["user_type"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_user_type'})     
+#    df = pd.merge(df, tmp, how='left', on=["user_type"])
+#    df2['median_deal_probability_user_type'] = df['median_deal_probability_user_type']
+    
+    tmp = df_train.groupby(["image_top_1"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_image_top_1'})     
+    df = pd.merge(df, tmp, how='left', on=["image_top_1"])
+    df2['median_deal_probability_image_top_1'] = df['median_deal_probability_image_top_1']
+    
+#    tmp = df_train.groupby(["param_1"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_param_1'})     
+#    df = pd.merge(df, tmp, how='left', on=["param_1"])
+#    df2['median_deal_probability_param_1'] = df['median_deal_probability_param_1']
+    
+#    tmp = df_train.groupby(["param_2"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_param_2'})     
+#    df = pd.merge(df, tmp, how='left', on=["param_2"])
+#    df2['median_deal_probability_param_2'] = df['median_deal_probability_param_2']
+
+Training until validation scores don't improve for 200 rounds.
+[100]	train's rmse: 0.217858	valid's rmse: 0.222371
+[200]	train's rmse: 0.210393	valid's rmse: 0.219173
+[300]	train's rmse: 0.205909	valid's rmse: 0.218278
+
+---------------------------------------------------------------------------------------------------------
+all the above features
+
+      lgbm_params =  {
+              "tree_method": "feature",    
+              "num_threads": 12,
+              "task": "train",
+              "boosting_type": "gbdt",
+              "objective": "regression",
+              "metric": "rmse",
+      #        "max_depth": 15,
+              "num_leaves": 500, # 35
+              "feature_fraction": 0.4,
+              "bagging_fraction": 0.4,
+              "learning_rate": 0.015,
+              "verbose": -1,
+              'lambda_l1':1,
+              'lambda_l2':1,
+              }
+
+
+Training until validation scores don't improve for 200 rounds.
+[100]	train's rmse: 0.220735	valid's rmse: 0.224542
+[200]	train's rmse: 0.212029	valid's rmse: 0.219709
+[300]	train's rmse: 0.207014	valid's rmse: 0.218215
+[400]	train's rmse: 0.202986	valid's rmse: 0.217418
+[500]	train's rmse: 0.19957	valid's rmse: 0.216913
+[600]	train's rmse: 0.196821	valid's rmse: 0.216581
+[700]	train's rmse: 0.194235	valid's rmse: 0.216328
+[800]	train's rmse: 0.191905	valid's rmse: 0.216172
+[900]	train's rmse: 0.189759	valid's rmse: 0.216044
+[1000]	train's rmse: 0.187739	valid's rmse: 0.215959
+[1100]	train's rmse: 0.185911	valid's rmse: 0.215898
+[1200]	train's rmse: 0.18416	valid's rmse: 0.21587
+[1300]	train's rmse: 0.182572	valid's rmse: 0.215825
+[1400]	train's rmse: 0.181084	valid's rmse: 0.215804
+[1500]	train's rmse: 0.179611	valid's rmse: 0.215778
+[1600]	train's rmse: 0.178262	valid's rmse: 0.215769
+[1700]	train's rmse: 0.176899	valid's rmse: 0.215755
+[1800]	train's rmse: 0.175582	valid's rmse: 0.215739
+[1900]	train's rmse: 0.174291	valid's rmse: 0.215729
+[2000]	train's rmse: 0.173089	valid's rmse: 0.21573
+[2100]	train's rmse: 0.171892	valid's rmse: 0.215735
+[2200]	train's rmse: 0.170733	valid's rmse: 0.215744
+Early stopping, best iteration is:
+[2041]	train's rmse: 0.172591	valid's rmse: 0.215723
+save model ...
+Model Evaluation Stage
+calculating RMSE ...
+RMSE: 0.21572339615459138
+/home/qifeng/anaconda3/lib/python3.6/site-packages/lightgbm/basic.py:447: UserWarning: Converting data to scipy sparse matrix.
+  warnings.warn('Converting data to scipy sparse matrix.')
+calculating RMSE ...
+mean rmse is: 0.043144679230918276
+Features importance...
+                                  feature       gain   split
+60                          ridge_preds_2  21.153901   16623
+5                             image_top_1  13.972825  108575
+8                                 param_1  10.178068   36937
+3                                    city   8.422306   90364
+2                           category_name   5.428079   16190
+49                                 price+   2.999894   33960
+7                            n_user_items   2.471777   11735
+13                                 region   2.439557   45354
+9                                 param_2   2.329228   15486
+12                                  price   1.587320   15319
+10                                param_3   1.473570   16362
+59                          ridge_preds_1   1.265705   12620
+0                        avg_days_up_user   1.063720   11956
+14                                user_id   0.963993   10289
+11                   parent_category_name   0.854116    1986
+4                                   image   0.650622   14472
+6                         item_seq_number   0.602716   13989
+1                       avg_times_up_user   0.516519    7619
+41                  description_num_chars   0.413041   10609
+16                         num_desc_punct   0.304843    6293
+50                       item_seq_number+   0.281335    4131
+43           description_num_unique_words   0.272711    5994
+45                        title_num_chars   0.269016    7748
+15                              user_type   0.268569    1787
+33                 text_feature_num_chars   0.244758    3371
+42                  description_num_words   0.230624    6338
+15063              description__состоянии   0.196044    3224
+33138        title_description__состоянии   0.177126    3447
+44            description_words_vs_unique   0.176152    5895
+28946            title_description__отдам   0.136934    1064
+38               text_feature_2_num_words   0.128993     366
+30784           title_description__продам   0.128488    3386
+39        text_feature_2_num_unique_words   0.125248     438
+35          text_feature_num_unique_words   0.122866     957
+51         median_deal_probability_price+   0.119531    1393
+12590                 description__продам   0.115401    2961
+46                        title_num_words   0.113350    3035
+32                                   wday   0.109241    3952
+37               text_feature_2_num_chars   0.103925    1168
+33108        title_description__состояние   0.103702    1849
+15032              description__состояние   0.103696    1924
+21541                title_description__б   0.087011    1363
+47                 title_num_unique_words   0.086553    2149
+40397   text_feature__транспорт_перевозки   0.082740      20
+25660          title_description__коляска   0.068047     693
+36           text_feature_words_vs_unique   0.061147    1046
+3099                       description__б   0.057584    1172
+18687                title_description__2   0.054780    1878
+19497                title_description__5   0.054465    1547
+973683                       title__отдам   0.054105     331
+Done.

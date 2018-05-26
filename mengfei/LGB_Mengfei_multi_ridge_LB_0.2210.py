@@ -15,7 +15,7 @@ from sklearn.utils import shuffle
 from contextlib import contextmanager
 from sklearn.externals import joblib
 
-debug = True
+debug = False
 print("loading data ...")
 used_cols = ["item_id", "user_id"]
 if debug == False:
@@ -38,6 +38,7 @@ else:
     train_periods = pd.read_csv("../input/periods_train.csv",  nrows=1000, parse_dates=["date_from", "date_to"])
     test_periods = pd.read_csv("../input/periods_test.csv",  nrows=1000, parse_dates=["date_from", "date_to"])
 print("loading data done!")
+
 # =============================================================================
 # Here Based on https://www.kaggle.com/bminixhofer/aggregated-features-lightgbm/code
 # =============================================================================
@@ -84,6 +85,8 @@ for col in agg_cols:
     test_df[col].fillna(-1, inplace=True)
 
 print("merging supplimentary data done!")
+
+
 # =============================================================================
 # done! go to the normal steps
 # =============================================================================
@@ -96,6 +99,8 @@ def text_preprocessing(text):
     text = text.lower() 
     # hash words
     text = re.sub(r"(\\u[0-9A-Fa-f]+)",r"", text)
+    
+    text = re.sub(r"===",r" ", text)
     
     # https://www.kaggle.com/demery/lightgbm-with-ridge-feature/code
     text = " ".join(map(str.strip, re.split('(\d+)',text)))
@@ -134,7 +139,7 @@ def feature_engineering(df):
         lbl = LabelEncoder()
         cat_col = ["user_id", "region", "city", "parent_category_name",
                "category_name", "user_type", "image_top_1",
-               "param_1", "param_2", "param_3", "image"]
+               "param_1", "param_2", "param_3","image"]
         for col in cat_col:
             df[col] = lbl.fit_transform(df[col].astype(str))
             gc.collect()
@@ -146,6 +151,7 @@ def feature_engineering(df):
 #        df["price"] = np.log(df["price"]+0.001).astype("float32")
 #        df["price"].fillna(-1,inplace=True)
         df["image_top_1"].fillna(-1,inplace=True)
+#        df["image_top_4"].fillna(-1,inplace=True)
         df["image"].fillna("noinformation",inplace=True)
         df["param_1"].fillna("nicapotato",inplace=True)
         df["param_2"].fillna("nicapotato",inplace=True)
@@ -191,10 +197,10 @@ def feature_engineering(df):
                       
     # choose which functions to run
     Do_NA(df)
-    Do_Text_Hash(df)  
-    Do_Count(df)
-    Do_Datetime(df)
+    Do_Text_Hash(df)
     Do_Label_Enc(df)
+    Do_Count(df)
+    Do_Datetime(df)   
     Do_Stat_Text(df)       
     Do_Drop(df)    
     gc.collect()
@@ -310,15 +316,16 @@ def feature_Eng_On_Deal_Prob(df, df_train):
     df = pd.merge(df, tmp, how='left', on=["item_seq_number+"])
     df2['median_deal_probability_item_seq_number+'] = df['median_deal_probability_item_seq_number+']
     
+       
     df2.fillna(-1, inplace=True)    
-    del tmp; gc.collect()  
+    del tmp; gc.collect()
     return df2
 
 del full_df['deal_probability']; gc.collect()
-# =============================================================================
-# handle price done
-# =============================================================================
 
+# =============================================================================
+# use additianl image data
+# =============================================================================
 feature_engineering(full_df)
 
 feature_Eng_On_Price_SEQ(full_df)
@@ -326,7 +333,6 @@ feature_Eng_On_Price_SEQ(train_df)
 feature_Eng_On_Deal_Prob(full_df, train_df)
 
 del train_df, test_df; gc.collect()
-
 full_df, ready_full_df, tfvocab = data_vectorize(full_df)
 
 #'alpha':20.0
@@ -335,16 +341,25 @@ ridge_params = {'alpha':20.0, 'fit_intercept':True, 'normalize':False, 'copy_X':
 ridge = SklearnWrapper(clf=Ridge, seed = SEED, params = ridge_params)
 ready_df = ready_full_df
 
-# ridge_oof
+print('ridge 1 oof ...')
+ridge_oof_train, ridge_oof_test = get_oof(ridge, np.array(full_df)[:len_train], y, np.array(full_df)[len_train:])
+ridge_preds = np.concatenate([ridge_oof_train, ridge_oof_test])
+full_df['ridge_preds_1'] = ridge_preds
+full_df['ridge_preds_1'].clip(0.0, 1.0, inplace=True)
+
+print('ridge 2 oof ...')
 ridge_oof_train, ridge_oof_test = get_oof(ridge, ready_df[:len_train], y, ready_df[len_train:])
 ridge_preds = np.concatenate([ridge_oof_train, ridge_oof_test])
-full_df['ridge_preds'] = ridge_preds
+full_df['ridge_preds_2'] = ridge_preds
+full_df['ridge_preds_2'].clip(0.0, 1.0, inplace=True)
+
 
 print("Modeling Stage ...")
 # Combine Dense Features with Sparse Text Bag of Words Features
 X = hstack([csr_matrix(full_df.iloc[:len_train]), ready_full_df[:len_train]]) # Sparse Matrix
 test = hstack([csr_matrix(full_df.iloc[len_train:]), ready_full_df[len_train:]]) # Sparse Matrix
 tfvocab = full_df.columns.tolist() + tfvocab
+
 
 for shape in [X,test]:
     print("{} Rows and {} Cols".format(*shape.shape))
@@ -367,14 +382,13 @@ cat_col = [
 
 rmse_sume = 0.
 
-from sklearn.model_selection import KFold
-kf = KFold(n_splits=5, random_state=42, shuffle=True)
-numIter = 0
-for train_index, test_index in kf.split(y):
-      print("in current loop of:", numIter)
-
-      X_train, X_valid = X.tocsr()[train_index], X.tocsr()[test_index]
-      y_train, y_valid = y.iloc[train_index], y.iloc[test_index]
+for numIter in range(0, 1):
+      
+      X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.1, random_state=42) #23
+      
+#      X_train, X_valid = X.tocsr()[train_index], X.tocsr()[test_index]
+#      y_train, y_valid = y.iloc[train_index], y.iloc[test_index]
+     
       lgbm_params =  {
               "tree_method": "feature",    
               "num_threads": 3,
@@ -384,9 +398,9 @@ for train_index, test_index in kf.split(y):
               "metric": "rmse",
       #        "max_depth": 15,
               "num_leaves": 280, # 35
-              "feature_fraction": 0.6,#0.7
-              "bagging_fraction": 0.6,#0.8
-              "learning_rate": 0.019,#0.019
+              "feature_fraction": 0.4,
+              "bagging_fraction": 0.4,
+              "learning_rate": 0.015,
               "verbose": -1,
               'lambda_l1':1,
               'lambda_l2':1,
@@ -404,7 +418,7 @@ for train_index, test_index in kf.split(y):
               num_boost_round=32000,
               valid_sets=[lgtrain, lgvalid],
               valid_names=["train","valid"],
-              early_stopping_rounds=500,
+              early_stopping_rounds=200,
               verbose_eval=100, #200
               )
       
