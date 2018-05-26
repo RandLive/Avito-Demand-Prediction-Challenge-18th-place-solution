@@ -209,3 +209,56 @@ Features importance...
 19497                title_description__5   0.054465    1547
 973683                       title__отдам   0.054105     331
 Done.
+
+-------------------------------------------------------------------------------------------------------
+All the above features.
+
+      lgbm_params =  {
+              "tree_method": "feature",    
+              "num_threads": 12,
+              "task": "train",
+              "boosting_type": "gbdt",
+              "objective": "regression",
+              "metric": "rmse",
+      #        "max_depth": 15,
+              "num_leaves": 500,
+              "feature_fraction": 0.2, # 0.4
+              "bagging_fraction": 0.2, # 0.4
+              "learning_rate": 0.015,
+              "verbose": -1,
+              'lambda_l1':1,
+              'lambda_l2':1,
+              }
+
+Training until validation scores don't improve for 200 rounds.
+[100]	train's rmse: 0.224938	valid's rmse: 0.227369
+[200]	train's rmse: 0.216547	valid's rmse: 0.221614
+[300]	train's rmse: 0.212141	valid's rmse: 0.219628
+[400]	train's rmse: 0.208717	valid's rmse: 0.218372
+[500]	train's rmse: 0.205796	valid's rmse: 0.217657
+[600]	train's rmse: 0.203365	valid's rmse: 0.217179
+[700]	train's rmse: 0.201094	valid's rmse: 0.21679
+[800]	train's rmse: 0.199017	valid's rmse: 0.216501
+[900]	train's rmse: 0.197008	valid's rmse: 0.216271
+[1000]	train's rmse: 0.195273	valid's rmse: 0.216128
+[1100]	train's rmse: 0.193605	valid's rmse: 0.215988
+[1200]	train's rmse: 0.192048	valid's rmse: 0.215896
+[1300]	train's rmse: 0.190544	valid's rmse: 0.215808
+[1400]	train's rmse: 0.189188	valid's rmse: 0.215741
+[1500]	train's rmse: 0.187814	valid's rmse: 0.215691
+[1600]	train's rmse: 0.186629	valid's rmse: 0.215665
+[1700]	train's rmse: 0.185489	valid's rmse: 0.215631
+[1800]	train's rmse: 0.184333	valid's rmse: 0.21561
+[1900]	train's rmse: 0.183066	valid's rmse: 0.215565
+[2000]	train's rmse: 0.18197	valid's rmse: 0.215531
+[2100]	train's rmse: 0.180947	valid's rmse: 0.215512
+[2200]	train's rmse: 0.179889	valid's rmse: 0.215504
+[2300]	train's rmse: 0.178814	valid's rmse: 0.215489
+[2400]	train's rmse: 0.177873	valid's rmse: 0.215485
+[2500]	train's rmse: 0.176894	valid's rmse: 0.215478
+[2600]	train's rmse: 0.176006	valid's rmse: 0.215467
+[2700]	train's rmse: 0.175141	valid's rmse: 0.215454
+[2800]	train's rmse: 0.174237	valid's rmse: 0.215459
+[2900]	train's rmse: 0.173374	valid's rmse: 0.215455
+Early stopping, best iteration is:
+[2722]	train's rmse: 0.174934	valid's rmse: 0.21545
