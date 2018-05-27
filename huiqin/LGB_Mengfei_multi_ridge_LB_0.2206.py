@@ -1,4 +1,5 @@
-from nltk.corpus import stopwords 
+#encoding=utf-8
+from nltk.corpus import stopwords
 from sklearn.preprocessing import LabelEncoder
 from sklearn.pipeline import FeatureUnion
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
@@ -145,6 +146,7 @@ def feature_engineering(df):
     def Do_Datetime(df):
         print("feature engineering -> date time ...")
         df["wday"] = df["activation_date"].dt.weekday
+        df["wday"] =df["wday"].astype(np.uint8)
 #        df["week"] = df["activation_date"].dt.week
 #        df["dom"] = df["activation_date"].dt.day
         
@@ -176,24 +178,24 @@ def feature_engineering(df):
     def Do_Count(df):  
         print("feature engineering -> do count ...")
         # some count       
-        df["num_desc_punct"] = df["description"].apply(lambda x: count(x, set(string.punctuation)))
-        df["num_desc_capE"] = df["description"].apply(lambda x: count(x, "[A-Z]"))
-        df["num_desc_capP"] = df["description"].apply(lambda x: count(x, "[А-Я]"))
+        df["num_desc_punct"] = df["description"].apply(lambda x: count(x, set(string.punctuation))).astype(np.int16)
+        df["num_desc_capE"] = df["description"].apply(lambda x: count(x, "[A-Z]")).astype(np.int16)
+        df["num_desc_capP"] = df["description"].apply(lambda x: count(x, "[А-Я]")).astype(np.int16)
         
-        df["num_title_punct"] = df["title"].apply(lambda x: count(x, set(string.punctuation)))
-        df["num_title_capE"] = df["title"].apply(lambda x: count(x, "[A-Z]"))
-        df["num_title_capP"] = df["title"].apply(lambda x: count(x, "[А-Я]"))               
+        df["num_title_punct"] = df["title"].apply(lambda x: count(x, set(string.punctuation))).astype(np.int16)
+        df["num_title_capE"] = df["title"].apply(lambda x: count(x, "[A-Z]")).astype(np.int16)
+        df["num_title_capP"] = df["title"].apply(lambda x: count(x, "[А-Я]"))  .astype(np.int16)
         # good, used, bad ... count
-        df["is_in_desc_хорошо"] = df["description"].str.contains("хорошо").map({True:1, False:0})
-        df["is_in_desc_Плохо"] = df["description"].str.contains("Плохо").map({True:1, False:0})
-        df["is_in_desc_новый"] = df["description"].str.contains("новый").map({True:1, False:0})
-        df["is_in_desc_старый"] = df["description"].str.contains("старый").map({True:1, False:0})
-        df["is_in_desc_используемый"] = df["description"].str.contains("используемый").map({True:1, False:0})
-        df["is_in_desc_есплатная_доставка"] = df["description"].str.contains("есплатная доставка").map({True:1, False:0})
-        df["is_in_desc_есплатный_возврат"] = df["description"].str.contains("есплатный возврат").map({True:1, False:0})
-        df["is_in_desc_идеально"] = df["description"].str.contains("идеально").map({True:1, False:0})
-        df["is_in_desc_подержанный"] = df["description"].str.contains("подержанный").map({True:1, False:0})
-        df["is_in_desc_пСниженные_цены"] = df["description"].str.contains("Сниженные цены").map({True:1, False:0})
+        df["is_in_desc_хорошо"] = df["description"].str.contains("хорошо").map({True:1, False:0}).astype(np.uint8)
+        df["is_in_desc_Плохо"] = df["description"].str.contains("Плохо").map({True:1, False:0}).astype(np.uint8)
+        df["is_in_desc_новый"] = df["description"].str.contains("новый").map({True:1, False:0}).astype(np.uint8)
+        df["is_in_desc_старый"] = df["description"].str.contains("старый").map({True:1, False:0}).astype(np.uint8)
+        df["is_in_desc_используемый"] = df["description"].str.contains("используемый").map({True:1, False:0}).astype(np.uint8)
+        df["is_in_desc_есплатная_доставка"] = df["description"].str.contains("есплатная доставка").map({True:1, False:0}).astype(np.uint8)
+        df["is_in_desc_есплатный_возврат"] = df["description"].str.contains("есплатный возврат").map({True:1, False:0}).astype(np.uint8)
+        df["is_in_desc_идеально"] = df["description"].str.contains("идеально").map({True:1, False:0}).astype(np.uint8)
+        df["is_in_desc_подержанный"] = df["description"].str.contains("подержанный").map({True:1, False:0}).astype(np.uint8)
+        df["is_in_desc_пСниженные_цены"] = df["description"].str.contains("Сниженные цены").map({True:1, False:0}).astype(np.uint8)
         
                               
     def Do_Drop(df):
@@ -278,7 +280,7 @@ def data_vectorize(df):
 
         ("title_char", TfidfVectorizer(
 
-            ngram_range=(1, 4),
+            ngram_range=(1, 4),#(1, 4),(1,6)
             max_features=16000,
             **tfidf_para2,
             preprocessor=get_col("title"))
@@ -339,8 +341,8 @@ def feature_Eng_On_Price_SEQ(df):
     print('feature engineering -> on price and SEQ ...')        
     df["price"] = np.log(df["price"]+0.001).astype("float32")
     df["price"].fillna(-1,inplace=True)     
-    df["price+"] = np.round(df["price"]*4.8).astype(int)   
-    df["item_seq_number+"] = np.round(df["item_seq_number"]/100).astype(int) 
+    df["price+"] = np.round(df["price"]*4.8).astype(np.int16)
+    df["item_seq_number+"] = np.round(df["item_seq_number"]/100).astype(np.int16)
     return df
 
 train_df, val_df = train_test_split(
@@ -350,13 +352,14 @@ def feature_Eng_On_Deal_Prob(df, df_train):
     df2 = df    
     tmp = df_train.groupby(["price+"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_price+'})     
     df = pd.merge(df, tmp, how='left', on=["price+"])
-    df2['median_deal_probability_price+'] = df['median_deal_probability_price+']  
+    df2['median_deal_probability_price+'] = df['median_deal_probability_price+']
+    df2['median_deal_probability_price+'] =df2['median_deal_probability_price+'].astype(np.float32)
     del tmp; gc.collect()
     
     tmp = df_train.groupby(["item_seq_number+"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_item_seq_number+'})     
     df = pd.merge(df, tmp, how='left', on=["item_seq_number+"])
     df2['median_deal_probability_item_seq_number+'] = df['median_deal_probability_item_seq_number+']
-    
+    df2['median_deal_probability_item_seq_number+'] =df2['median_deal_probability_item_seq_number+'].astype(np.float32)
        
     df2.fillna(-1, inplace=True)    
     del tmp; gc.collect()
@@ -393,17 +396,21 @@ ridge_oof_train, ridge_oof_test = get_oof(ridge, ready_df[:len_train], y, ready_
 ridge_preds = np.concatenate([ridge_oof_train, ridge_oof_test])
 full_df['ridge_preds_2'] = ridge_preds
 full_df['ridge_preds_2'].clip(0.0, 1.0, inplace=True)
-
+del ridge_oof_train, ridge_oof_test
+gc.collect()
 
 print("Modeling Stage ...")
 # Combine Dense Features with Sparse Text Bag of Words Features
 X = hstack([csr_matrix(full_df.iloc[:len_train]), ready_full_df[:len_train]]) # Sparse Matrix
-test = hstack([csr_matrix(full_df.iloc[len_train:]), ready_full_df[len_train:]]) # Sparse Matrix
+# test = hstack([csr_matrix(full_df.iloc[len_train:]), ready_full_df[len_train:]]) # Sparse Matrix
 tfvocab = full_df.columns.tolist() + tfvocab
-
-
-for shape in [X,test]:
-    print("{} Rows and {} Cols".format(*shape.shape))
+X_test_full=full_df.iloc[len_train:]
+X_test_ready=ready_full_df[len_train:]
+del ready_full_df,full_df
+gc.collect()
+#
+# for shape in [X,test]:
+#     print("{} Rows and {} Cols".format(*shape.shape))
 print("Feature Names Length: ",len(tfvocab))
 
 cat_col = [
@@ -429,16 +436,17 @@ for numIter in range(0, 1):
       
 #      X_train, X_valid = X.tocsr()[train_index], X.tocsr()[test_index]
 #      y_train, y_valid = y.iloc[train_index], y.iloc[test_index]
-     
+      del X,y
+      gc.collect()
       lgbm_params =  {
               "tree_method": "feature",    
-              "num_threads": 6,
+              "num_threads": 7,
               "task": "train",
               "boosting_type": "gbdt",
               "objective": "regression",
               "metric": "rmse",
              # "max_depth": 15,
-              "num_leaves": 500, # 280,360
+              "num_leaves": 500, # 280,360,500,32
               "feature_fraction": 0.2, #0.4
               "bagging_fraction": 0.2, #0.4
               "learning_rate": 0.015,#0.015
@@ -470,6 +478,8 @@ for numIter in range(0, 1):
       
       print("Model Evaluation Stage")
       print( "RMSE:", rmse(y_valid, lgb_clf.predict(X_valid, num_iteration=lgb_clf.best_iteration)) )
+
+      test = hstack([csr_matrix(X_test_full), X_test_ready])  # Sparse Matrix
       lgpred = lgb_clf.predict(test, num_iteration=lgb_clf.best_iteration)
       
       lgsub = pd.DataFrame(lgpred,columns=["deal_probability"],index=sub_item_id)
@@ -499,6 +509,31 @@ print("Done.")
 
 
 """
+Training until validation scores don't improve for 200 rounds.
+[100]   train's rmse: 0.222137  valid's rmse: 0.223204
+[200]   train's rmse: 0.218536  valid's rmse: 0.22062
+[300]   train's rmse: 0.216667  valid's rmse: 0.219558
+[400]   train's rmse: 0.215363  valid's rmse: 0.218984
+[500]   train's rmse: 0.214371  valid's rmse: 0.218628
+[600]   train's rmse: 0.213575  valid's rmse: 0.218439
+[700]   train's rmse: 0.212943  valid's rmse: 0.218287
+[800]   train's rmse: 0.212364  valid's rmse: 0.218184
+[900]   train's rmse: 0.211831  valid's rmse: 0.21809
+[1000]  train's rmse: 0.211392  valid's rmse: 0.218054
+[1100]  train's rmse: 0.210915  valid's rmse: 0.217974
+[1200]  train's rmse: 0.210504  valid's rmse: 0.217943
+[1300]  train's rmse: 0.210084  valid's rmse: 0.217897
+[1400]  train's rmse: 0.209658  valid's rmse: 0.217857
+[1500]  train's rmse: 0.209265  valid's rmse: 0.217817
+[1600]  train's rmse: 0.20888   valid's rmse: 0.217795
+[1700]  train's rmse: 0.20849   valid's rmse: 0.217757
+[1800]  train's rmse: 0.208115  valid's rmse: 0.217727
+[1900]  train's rmse: 0.207731  valid's rmse: 0.217703
+[2000]  train's rmse: 0.207364  valid's rmse: 0.217665
+[2100]  train's rmse: 0.206997  valid's rmse: 0.217619
+[2200]  train's rmse: 0.206597  valid's rmse: 0.217602
+
+
 [6200]	train's rmse: 0.195332	valid's rmse: 0.216305
 [6300]	train's rmse: 0.195234	valid's rmse: 0.216305
 [6400]	train's rmse: 0.195118	valid's rmse: 0.216301
@@ -513,7 +548,36 @@ Training until validation scores don't improve for 200 rounds.
 
 mean rmse is: 0.21697176669518864
 
+"num_leaves": 32,
+"learning_rate": 0.05
+Training until validation scores don't improve for 200 rounds.
+[100]   train's rmse: 0.181808  valid's rmse: 0.241621
+[200]   train's rmse: 0.148168  valid's rmse: 0.243786
 Early stopping, best iteration is:
+[67]    train's rmse: 0.197385  valid's rmse: 0.24111
+
+
+Early stopping, best iteration is:学习率0.1
+[28]    train's rmse: 0.20511   valid's rmse: 0.242049
+
+Early stopping, best iteration is:
+[243]   train's rmse: 0.194437  valid's rmse: 0.241955
+
+Early stopping, best iteration is:(1,8)
+[150]   train's rmse: 0.193472  valid's rmse: 0.242612
+
+Early stopping, best iteration is:
+[333]   train's rmse: 0.152137  valid's rmse: 0.241698
+
+Early stopping, best iteration is:(1,6)
+[333]   train's rmse: 0.152137  valid's rmse: 0.241698
+
+[178]   train's rmse: 0.190238  valid's rmse: 0.244317(1,1)
+
+Early stopping, best iteration is: (1,2)
+[320]   train's rmse: 0.155529  valid's rmse: 0.242601
+
+Early stopping, best iteration is:(1,4)
 [215]	train's rmse: 0.17696	valid's rmse: 0.242142
 
 [267]	train's rmse: 0.183306	valid's rmse: 0.243442
