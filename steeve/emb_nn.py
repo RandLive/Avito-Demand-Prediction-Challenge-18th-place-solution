@@ -21,16 +21,17 @@ from keras.backend.tensorflow_backend import set_session
 from keras.preprocessing.sequence import pad_sequences
 from keras.layers import Input, Dropout, Dense, concatenate, CuDNNGRU, Embedding, Flatten, Activation, BatchNormalization, PReLU
 from keras.initializers import he_uniform, RandomNormal
-from keras.layers import Conv1D, SpatialDropout1D, Bidirectional, Reshape
+from keras.layers import Conv1D, SpatialDropout1D, Bidirectional, Reshape, Dot
 from keras.layers import GlobalMaxPooling1D, GlobalAveragePooling1D
 from sklearn.model_selection import KFold
+import keras.backend as K
 from tqdm import tqdm
 from nltk import ngrams
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import mean_squared_error
 
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
 # restrict gpu usage
@@ -47,37 +48,90 @@ with open('../input/train_ridge.p', 'rb') as f:
     
 with open('../input/test_ridge.p', 'rb') as f:
     test = pickle.load(f)    
+
+gp = pd.read_csv('../input/aggregated_features.csv') 
+train = train.merge(gp, on='user_id', how='left')
+test = test.merge(gp, on='user_id', how='left')
+
 # print(train.columns)    
-# with open('../input/inception_v3_include_head_max_train.p','rb') as f:
-#     x = pickle.load(f)
+with open('../input/inception_v3_include_head_max_train.p','rb') as f:
+    x = pickle.load(f)
     
-# train_features = x['features']
-# train_ids = x['ids']
+train_features = x['features']
+train_ids = x['ids']
 
-# with open('../input/inception_v3_include_head_max_test.p','rb') as f:
-#     x = pickle.load(f)
+with open('../input/inception_v3_include_head_max_test.p','rb') as f:
+    x = pickle.load(f)
 
-# test_features = x['features']
-# test_ids = x['ids']    
+test_features = x['features']
+test_ids = x['ids']    
 
-# del x
-# gc.collect()
+del x
+gc.collect()
 
 
 
-# incep_train_image_df = pd.DataFrame(train_features, columns = ['image_quality'])
-# incep_test_image_df = pd.DataFrame(test_features, columns = [f'image_quality'])
-# incep_train_image_df['image'] = train_ids
-# incep_test_image_df['image'] = test_ids
-# train = train.join(incep_train_image_df.set_index('image'), on='image')
-# test = test.join(incep_test_image_df.set_index('image'), on='image')    
+incep_train_image_df = pd.DataFrame(train_features, columns = ['image_quality'])
+incep_test_image_df = pd.DataFrame(test_features, columns = [f'image_quality'])
+incep_train_image_df['image'] = train_ids
+incep_test_image_df['image'] = test_ids
+train = train.join(incep_train_image_df.set_index('image'), on='image')
+test = test.join(incep_test_image_df.set_index('image'), on='image')    
+
+
+# print(train.columns)    
+with open('../input/train_image_features.p','rb') as f:
+    x = pickle.load(f)
+    
+train_blurinesses = x['blurinesses']
+train_ids = x['ids']
+
+with open('../input/test_image_features.p','rb') as f:
+    x = pickle.load(f)
+
+test_blurinesses = x['blurinesses']
+test_ids = x['ids']    
+
+del x
+gc.collect()
+
+
+
+incep_train_image_df = pd.DataFrame(train_blurinesses, columns = ['blurinesses'])
+incep_test_image_df = pd.DataFrame(test_blurinesses, columns = [f'blurinesses'])
+incep_train_image_df['image'] = train_ids
+incep_test_image_df['image'] = test_ids
+train = train.join(incep_train_image_df.set_index('image'), on='image')
+test = test.join(incep_test_image_df.set_index('image'), on='image')  
+
 
 data = pd.concat([train, test], axis=0)
 
+with open('../input/region_income.csv', 'r')as f:
+    region_incomes = [i.strip() for i in f.readlines()]
+    
+region_income_map = {}
+for line in region_incomes:
+    region, income = line.split(';')
+    region_income_map[region] = int(income)
+
+data['income'] = data.region.map(region_income_map )
+
+
+    
 text_col = ['title', 'description', 'param_1', 'param_2', 'param_3']
 for c in text_col:
     data[c].fillna(f'No {c}', inplace=True)
 
+mean_image_quality = data.loc[~data.image_quality.isna(), 'image_quality'].mean()
+data['image_quality'].fillna(mean_image_quality, inplace=True)    
+mean_blurinesses= data.loc[~data.blurinesses.isna(), 'blurinesses'].mean()
+data['blurinesses'].fillna(mean_blurinesses, inplace=True)    
+
+city_population = pd.read_csv('../input/city_population_wiki_v3.csv')
+data = data.merge(city_population, on='city', how='left')
+mean_population = city_population.population.mean()
+data['population'].fillna(mean_population, inplace=True)
 # data['text_feat'] = data.apply(lambda row: ' '.join([
 #     str(row['param_1']), 
 #     str(row['param_2']), 
@@ -86,23 +140,37 @@ for c in text_col:
     
 #fill mean for price    
 # data['price'].fillna(data.loc[~data.price.isna()].mean(), inplace=True)
-# mean_image_quality = data.loc[~data.image_quality.isna(), 'image_quality'].mean()
-# data['image_quality'].fillna(mean_image_quality, inplace=True)
-# print(mean_image_quality, flush=True)
+
+#process data
+
 data['item_seq_number'] = np.log1p(data['item_seq_number']).astype(np.float32)
 data['price'] = np.log1p(data['price']).astype(np.float32)
 data['des_len'] = data.description.str.len()
 data['des_nwords'] = data.description.str.split().apply(len)  
+data['population'] = np.log1p(data['population']).astype(np.float32)
+# data['param_123'] = data['param_1'].astype(str) +'_' + data['param_2'].astype(str) + '_' +  data['param_3'].astype(str)
 # data['text_feat_len'] = data.text_feat.str.len()
 # data['text_feat_nwords'] = data.text_feat.str.split().apply(len)  
 # data['title_len'] = data.title.str.len()
 # data['title_nwords'] = data.title.str.split().apply(len)
+
+
+
 
 cont_features = ['price']
 cont_features.append('des_len')
 cont_features.append('des_nwords')
 cont_features.append('item_seq_number')
 cont_features.append('ridge_feature')
+cont_features.append('avg_days_up_user')
+cont_features.append('avg_times_up_user')
+cont_features.append('n_user_items')
+cont_features.append('population')
+# cont_features.append('blurinesses')
+# cont_features.append('image_quality')
+
+
+
 # cont_features.append('text_feat_len')
 # cont_features.append('text_feat_nwords')
 
@@ -134,8 +202,7 @@ new_data.fillna(0, inplace= True)
 
 X = new_data.loc[new_data.activation_date<=pd.to_datetime('2017-04-07')]
 X_te = new_data.loc[new_data.activation_date>=pd.to_datetime('2017-04-08')]
-print(f'cont_features: {cont_features}', flush=True)
-print(f'columns: {new_data.columns}', flush=True)
+
 # the word must appear at least five time        
 
 
@@ -149,8 +216,24 @@ with open(f'../input/train_title_seq.p','rb') as f:
     train_title_seq = pickle.load(f)    
 
 with open(f'../input/test_title_seq.p','rb') as f:
-    test_title_seq = pickle.load(f)    
+    test_title_seq = pickle.load(f)
     
+# with open(f'../input/train_des_vec_word_swr_lower_rmspecial_50000_lda_50_5000_iter.p','rb') as f:
+#     train_des_vec = pickle.load(f)    
+    
+# with open(f'../input/test_des_vec_word_swr_lower_rmspecial_50000_lda_50_5000_iter.p','rb') as f:
+#     test_des_vec = pickle.load(f)        
+    
+# lda_cols = [f'lda{i}' for i in range(50)]    
+# train_lda = pd.DataFrame(train_des_vec, columns = lda_cols)    
+# test_lda = pd.DataFrame(test_des_vec, columns = lda_cols)
+# cont_features.extend(lda_cols)
+# X = pd.concat([X, train_lda], axis=1)
+# X_te = pd.concat([X_te, test_lda], axis=1)
+
+print(f'cont_features: {cont_features}', flush=True)
+print(f'columns: {new_data.columns}', flush=True)
+
 # with open('../input/train_des_vec_word_swr_lower_rmspecial_10000.p','rb') as f:
 #     train_des_vec = pickle.load(f)    
 
@@ -180,7 +263,7 @@ def get_keras_fasttext(df, des_seq, title_seq):
         'region': np.array(df['region']),
         'city': np.array(df['city']),
         'image_top_1': np.array(df['image_top_1']),
-        'ridge_feature':np.array(df['ridge_feature']),
+#         'param_123': np.array(df['param_123']),
 #         'description_vector':des_vec,
 #         'price': np.array(df['price']),
 #         'image_top_1_deal_probability_avg': np.array(df['image_top_1_deal_probability_avg']),
@@ -209,6 +292,7 @@ max_param_3 = np.max(new_data['param_3'].max()) + 1
 max_region = np.max(new_data['region'].max()) + 1
 max_city = np.max(new_data['city'].max()) + 1
 max_image_top_1 = np.max(new_data['image_top_1'].max()) + 1
+# max_param_123 = np.max(new_data['param_123'].max()) + 1
 
 del data, new_data
 gc.collect()
@@ -221,23 +305,31 @@ x_test = get_keras_fasttext(X_te, test_des_seq, test_title_seq)
 # print(f"cont size: {x_train['cont_features'].shape}")    
 
 hyper_params={
-    'description_embedding': 32, 
-    'title_embedding': 16, 
+    'description_embedding': 40, 
+    'description_filters':40,
+    'title_filters':40,
+    'title_embedding': 40, 
     'category_name_embedding': 4,
     'parent_category_name_embedding': 4, 
     'param_1_embedding': 8, 
     'param_2_embedding': 8, 
-    'param_3_embedding': 32, 
-    'city_embedding': 16, 
-    'region_embedding': 32, 
-    'image_top_1_embedding': 64, 
-    'user_type_embedding': 2
+    'param_3_embedding': 40, 
+#     'param_123_embedding': 40, 
+    'city_embedding': 40, 
+    'region_embedding': 40, 
+    'image_top_1_embedding': 40, 
+    'user_type_embedding': 2,
+    'enable_deep':False,
+    'enable_fm':False,
+    "fc_dim": 64,
+    'learning_rate':0.0001
+    
 }
 print(hyper_params, flush=True)
 def gauss_init():
     return RandomNormal(mean=0.0, stddev=0.005)
 
-def get_vanilla_model():
+def get_model():
     description = Input(shape=[x_train["description"].shape[1]], name="description")
     title = Input(shape=[x_train["title"].shape[1]], name="title")
     user_type = Input(shape=[1], name="user_type")
@@ -249,61 +341,87 @@ def get_vanilla_model():
     region = Input(shape=[1], name="region")
     city = Input(shape=[1], name="city")
     image_top_1 = Input(shape=[1], name="image_top_1")
-#     description_vector = Input(shape=[x_train["description_vector"].shape[1]], name="description_vector", sparse=True)
-#     des_vec = Dense(100)(description_vector)
-#     price = Input(shape=[1], name="price")
-#     image_top_1_deal_probability_avg = Input(shape=[1], name="image_top_1_deal_probability_avg")
-#     image_top_1_deal_probability_std = Input(shape=[1], name="image_top_1_deal_probability_std")
-
-#     item_seq_number_deal_probability_avg = Input(shape=[1], name="item_seq_number_deal_probability_avg")
-#     item_seq_number_deal_probability_std = Input(shape=[1], name="item_seq_number_deal_probability_std")
-#     des_len = Input(shape=[1], name="des_len")
-#     des_nwords = Input(shape=[1], name="des_nwords")
+#     param_123 = Input(shape=[1], name="param_123")
     
     continuous_inputs = [Input(shape=[1], name=feat) for feat in cont_features]
-#     continuous_features = concatenate(continuous_inputs, axis=1)
-#     continuous_features = Reshape([1,len(cont_features)])(continuous_features)
-#     cont_x = CuDNNGRU(20)(continuous_features)
-#     shared_embedding = Embedding(max_text, 300, weights=[embedding_matrix], trainable=True)        
-#     shared_embedding = Embedding(max_text, hyper_params['description_embedding'], embeddings_initializer = gauss_init())    
-    desc_embedding = Embedding(max_text, hyper_params['description_embedding'], embeddings_initializer = gauss_init())    
-    title_embedding = Embedding(max_text, hyper_params['title_embedding'], embeddings_initializer = gauss_init())        
-    emb_description = desc_embedding (description)
-#     emb_description = shared_embedding (description)    
-#     emb_description = SpatialDropout1D(0.2)(emb_description)
-#     emb_description = CuDNNGRU(50, return_sequences=True)(emb_description)
-#     emb_description = Conv1D(filters=hyper_params['description_filters'], kernel_size=3, activation='relu')(emb_description)
+      
+    shared_embedding = Embedding(max_text, hyper_params['description_embedding'], embeddings_initializer = gauss_init())    
 
-    emb_title = title_embedding (title)
-#     emb_title = shared_embedding (title)
-#     emb_title = Conv1D(filters=hyper_params['title_filters'], kernel_size=3, activation='relu')(emb_title)
+    emb_description = shared_embedding (description)    
+#     des_convs =[ Conv1D(filters=hyper_params['description_filters'], kernel_size=i, activation='relu',padding='same')(emb_description) for i in range(2,4)]
+#     des_convs.extend([ Conv1D(filters=hyper_params['description_filters'], kernel_size=i, activation='relu',padding='same', dilation_rate = 2)(emb_description) for i in range(1,3)])
+#     emb_description = concatenate([emb_description, *des_convs], axis=2)
+    
+    emb_title = shared_embedding (title)
+#     title_convs =[ Conv1D(filters=hyper_params['title_filters'], kernel_size=i, activation='relu',padding='same')(emb_title) for i in range(2,4)]
+#     emb_title = concatenate([emb_title, *title_convs], axis=2)
     
     
-    emb_user_type = Flatten() ( Embedding(max_user_type, hyper_params['user_type_embedding'], embeddings_initializer = gauss_init())(user_type)    )
-    emb_param_1 = Flatten() ( Embedding(max_param_1, hyper_params['param_1_embedding'], embeddings_initializer = gauss_init())(param_1) )
-    emb_param_2 = Flatten() ( Embedding(max_param_2, hyper_params['param_2_embedding'], embeddings_initializer = gauss_init())(param_2) )
-    emb_param_3 = Flatten() ( Embedding(max_param_3, hyper_params['param_3_embedding'], embeddings_initializer = gauss_init())(param_3) )
-    emb_category_name =  Flatten() ( Embedding(max_category_name, hyper_params['category_name_embedding'], embeddings_initializer = gauss_init())(category_name) )
-    emb_parent_category_name =  Flatten() ( Embedding(max_parent_category_name, hyper_params['parent_category_name_embedding'], embeddings_initializer = gauss_init())(parent_category_name) )
-    emb_region = Flatten() ( Embedding(max_region, hyper_params['region_embedding'], embeddings_initializer = gauss_init())(region) )
-    emb_city = Flatten() ( Embedding(max_city, hyper_params['city_embedding'], embeddings_initializer = gauss_init())(city) )
-    emb_image_top_1 = Flatten() ( Embedding(max_image_top_1, hyper_params['image_top_1_embedding'], embeddings_initializer = gauss_init())(image_top_1) )
+    emb_user_type =  ( Embedding(max_user_type, hyper_params['user_type_embedding'], embeddings_initializer = gauss_init())(user_type)    )
+    emb_param_1 =  ( Embedding(max_param_1, hyper_params['param_1_embedding'], embeddings_initializer = gauss_init())(param_1) )
+    emb_param_2 =  ( Embedding(max_param_2, hyper_params['param_2_embedding'], embeddings_initializer = gauss_init())(param_2) )
+    emb_param_3 = ( Embedding(max_param_3, hyper_params['param_3_embedding'], embeddings_initializer = gauss_init())(param_3) )
+    emb_category_name =   ( Embedding(max_category_name, hyper_params['category_name_embedding'], embeddings_initializer = gauss_init())(category_name) )
+    emb_parent_category_name =   ( Embedding(max_parent_category_name, hyper_params['parent_category_name_embedding'], embeddings_initializer = gauss_init())(parent_category_name) )
+    emb_region = ( Embedding(max_region, hyper_params['region_embedding'], embeddings_initializer = gauss_init())(region) )
+    emb_city = ( Embedding(max_city, hyper_params['city_embedding'], embeddings_initializer = gauss_init())(city) )
+    emb_image_top_1 =  ( Embedding(max_image_top_1, hyper_params['image_top_1_embedding'], embeddings_initializer = gauss_init())(image_top_1) )
+#     emb_param_123 = ( Embedding(max_param_123, hyper_params['param_123_embedding'], embeddings_initializer = gauss_init())(param_123) )
     
-    emb_description = GlobalMaxPooling1D( name='output_des_max' )(emb_description)
-    emb_title = GlobalMaxPooling1D(name='output_title_max' )(emb_title)
+    att_description = GlobalMaxPooling1D( name='output_des_max' )(emb_description)
+    att_title = GlobalMaxPooling1D(name='output_title_max' )(emb_title)
 
-    x = concatenate([ emb_description, emb_title, emb_region, emb_city, emb_category_name, emb_parent_category_name,
-    emb_user_type, emb_param_1, emb_param_2, emb_param_3, emb_image_top_1, *continuous_inputs] )
+    common_list = [
+                    Flatten()(emb_image_top_1),
+                    Flatten()(emb_region),
+                    ]
+    fm_list = []
+    if hyper_params['enable_fm']:
+        fm_description = [ Dot(axes=1)([att_description, common]) for common in common_list]
+        fm_title = [ Dot(axes=1)([att_title, common]) for common in common_list]
+        fm_list += fm_description
+        fm_list += fm_title
+        
+    final_list = [ att_description, 
+                  att_title, 
+                  Flatten()  (emb_region), 
+                  Flatten()   (emb_city), 
+                    Flatten() ( emb_category_name), 
+                    Flatten()  (emb_parent_category_name),
+                    Flatten() (emb_user_type), 
+                    Flatten()  (emb_param_1), 
+                    Flatten()  (emb_param_2), 
+                    Flatten()   (emb_param_3), 
+                    Flatten()  (emb_image_top_1), 
+#                     Flatten()   (emb_param_123), 
+                    *continuous_inputs]
+#     deep_list = [
+#         fm_description,
+#         fm_title,
+#         att_description,
+#         att_title,
+#     ]
+
+
+    
+#     deep_x = 
+    x = concatenate(final_list )
     x = BatchNormalization()(x)
     
-    x = Dense(1024)(x)
+    x = Dense(512)(x)
+    if hyper_params['enable_fm']:
+        x = concatenate([x, *fm_list])
+
     x = Activation('relu')(x)
-    
+#     x = Dense(128)(x)
+#     x = Activation('relu')(x)
+    x = Dense(64)(x)
+    x = Activation('relu')(x)
     x = Dense(1, activation="sigmoid") (x)
     model = Model([description, title,  user_type , category_name, parent_category_name, param_1, param_2, param_3,
                    region,city, image_top_1, *continuous_inputs] ,
                    x)
-    optimizer = Adam(.002, amsgrad=True)
+    optimizer = Adam(hyper_params['learning_rate'], amsgrad=True)
     model.compile(loss="mse", optimizer=optimizer)
     return model
 
@@ -345,6 +463,8 @@ def train_bagging(X, y, fold_count):
             val_predict[test_index] = y_pred[:,0]
 #             model_list.append(model)
             rmse = mean_squared_error(y_val, y_pred) ** 0.5
+            
+
             del model
             gc.collect()
             print(f'rmse: {rmse}')
@@ -353,16 +473,18 @@ def train_bagging(X, y, fold_count):
         
         model = get_model()
 
-        early= EarlyStopping(monitor='val_loss', patience=4, verbose=0, mode='auto')
+        early= EarlyStopping(monitor='val_loss', patience=2, verbose=0, mode='auto')
         checkpoint = ModelCheckpoint(model_path, monitor='val_loss', verbose=1, save_best_only=True, mode='auto')
-        rlrop = ReduceLROnPlateau(monitor='val_loss',mode='auto',patience=2,verbose=1,factor=0.1,cooldown=0,min_lr=1e-6)
-        callbacks = [early, checkpoint, rlrop]
+#         rlrop = ReduceLROnPlateau(monitor='val_loss',mode='auto',patience=2,verbose=1,factor=0.1,cooldown=0,min_lr=1e-6)
+        callbacks = [early, checkpoint]
         
         model.fit(x_train, y_train, validation_data=(x_val, y_val), callbacks=callbacks, epochs=epochs, verbose=0)
         model.load_weights(model_path)
         y_pred = model.predict(x_val)        
         val_predict[test_index] = y_pred[:,0]
         rmse = mean_squared_error(y_val, y_pred) ** 0.5
+        train_rmse = mean_squared_error(model.predict(x_train), y_train) ** 0.5
+        print(f'train_rmse {train_rmse}')
         print(f'rmse: {rmse}')
         del model
         gc.collect()
@@ -383,13 +505,13 @@ batch_size = 1024
 nfold = 5
 rmse_list = []
 
-fname = 'mercari_no2_sol_split_16_32_emb_price_ridge_deslen_hpt1_nn_5fold'
+fname = 'mercari_no2_sol_emb_40_price_ridge_avgday_avgtime_nui_deslen_population_512_64_lr1_hpt0_nn_5fold'
 # fname = 'mercari_no2_sol_emb_bigru_60_5fold'
 # fname = 'mercari_no2_sol_emb_cnn_f12_5fold'
 
 # get_model = get_cnn_model
 # get_model = get_gru_model
-get_model = get_vanilla_model
+# get_model = get_vanilla_model
 
 print(get_model().summary(), flush=True)
 print(f'fname {fname}', flush=True)
@@ -428,7 +550,7 @@ train_user_ids = train_data.user_id.values
 train_item_ids = train_data.item_id.values
 
 train_item_ids = train_item_ids.reshape(len(train_item_ids), 1)
-train_user_ids = train_item_ids.reshape(len(train_user_ids), 1)
+train_user_ids = train_user_ids.reshape(len(train_user_ids), 1)
 
 val_predicts = pd.DataFrame(data=val_predict, columns= label)
 val_predicts['user_id'] = train_user_ids
