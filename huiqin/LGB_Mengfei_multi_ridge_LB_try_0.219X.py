@@ -15,14 +15,14 @@ import gc, re
 from sklearn.utils import shuffle
 from contextlib import contextmanager
 from sklearn.externals import joblib
-import nltk
 import pickle
 # nltk.download('stopwords')
 import time
 
 
 print("Starting job at time:",time.time())
-debug =False#False,True
+debug =True#False,True
+
 print("loading data ...")
 used_cols = ["item_id", "user_id"]
 if debug == False:
@@ -146,21 +146,6 @@ incep_train_image_df['image'] = (train_ids)
 incep_test_image_df['image'] = (test_ids)
 train_df = train_df.join(incep_train_image_df.set_index('image'), on='image')
 test_df = test_df.join(incep_test_image_df.set_index('image'), on='image') 
-
-# =============================================================================
-# Add region-income
-# =============================================================================
-tmp = pd.read_csv("../input/region_income.csv", sep=";", names=["region", "income"])
-train_df = train_df.merge(tmp, on="region", how="left")
-test_df = test_df.merge(tmp, on="region", how="left")
-del tmp; gc.collect()
-# =============================================================================
-# Add region-income
-# =============================================================================
-tmp = pd.read_csv("../input/city_population_wiki_v3.csv")
-train_df = train_df.merge(tmp, on="city", how="left")
-test_df = test_df.merge(tmp, on="city", how="left")
-del tmp; gc.collect()
 
 # =============================================================================
 # Add region-income
@@ -392,12 +377,12 @@ def data_vectorize(df):
             **tfidf_para,
             preprocessor=get_col("description"))
          ),
-        # ("title_description", TfidfVectorizer(
-        #      ngram_range=(1, 2),#(1,2)
-        #      max_features=8000,#40000,18000
-        #      **tfidf_para,
-        #      preprocessor=get_col("title_description"))
-        #   ),
+         ("title_description", TfidfVectorizer(
+              ngram_range=(1, 2),#(1,2)
+              max_features=8000,#40000,18000
+              **tfidf_para,
+              preprocessor=get_col("title_description"))
+           ),
         ("text_feature", CountVectorizer(
             ngram_range=(1, 2),
             preprocessor=get_col("text_feature"))
@@ -541,7 +526,7 @@ X = hstack([csr_matrix(full_df.iloc[:len_train]), ready_full_df[:len_train]]) # 
 tfvocab = full_df.columns.tolist() + tfvocab
 X_test_full=full_df.iloc[len_train:]
 X_test_ready=ready_full_df[len_train:]
-del ready_full_df,full_df
+#del ready_full_df,full_df
 gc.collect()
 
 
@@ -580,7 +565,7 @@ for numIter in range(0, 1):
               "objective": "regression",
               "metric": "rmse",
              # "max_depth": 15,
-              "num_leaves": 500, # 280,360,500,32
+              "num_leaves": 420, # 280,360,500,32
               "feature_fraction": 0.2, #0.4
               "bagging_fraction": 0.2, #0.4
               "learning_rate": 0.015,#0.015
