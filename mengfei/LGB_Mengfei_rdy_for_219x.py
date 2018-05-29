@@ -30,7 +30,7 @@ if debug == False:
     test_periods = pd.read_csv("../input/periods_test.csv", parse_dates=["date_from", "date_to"])
 else:
     train_df = pd.read_csv("../input/train.csv", parse_dates = ["activation_date"])
-    train_df = shuffle(train_df, random_state=1234); train_df = train_df.iloc[:50000]
+    train_df = shuffle(train_df, random_state=1234); train_df = train_df.iloc[:5000]
     y = train_df["deal_probability"]
     test_df = pd.read_csv("../input/test.csv",  nrows=1000, parse_dates = ["activation_date"])
     # suppl 
@@ -39,6 +39,16 @@ else:
     train_periods = pd.read_csv("../input/periods_train.csv",  nrows=1000, parse_dates=["date_from", "date_to"])
     test_periods = pd.read_csv("../input/periods_test.csv",  nrows=1000, parse_dates=["date_from", "date_to"])
 print("loading data done!")
+
+# =============================================================================
+# add geo info: https://www.kaggle.com/frankherfert/avito-russian-region-cities/data
+# =============================================================================
+tmp = pd.read_csv("../input/avito_region_city_features.csv", usecols=["city", "region", "city_region", "latitude", "longitude"])
+train_df = train_df.merge(tmp, on=["city","region"], how="left")
+train_df["lat_long"] = train_df["latitude"]+train_df["longitude"]
+test_df = test_df.merge(tmp, on=["city","region"], how="left")
+test_df["lat_long"] = test_df["latitude"]+test_df["longitude"]
+del tmp; gc.collect()
 
 # =============================================================================
 # Add region-income
@@ -59,7 +69,6 @@ del tmp; gc.collect()
 # =============================================================================
 # Add image quality: by steeve
 # ============================================================================= 
- 
 with open('../input/inception_v3_include_head_max_train.p','rb') as f:
     x = pickle.load(f)
     
@@ -248,7 +257,9 @@ def feature_engineering(df):
         lbl = LabelEncoder()
         cat_col = ["user_id", "region", "city", "parent_category_name",
                "category_name", "user_type", "image_top_1",
-               "param_1", "param_2", "param_3","image"]
+               "param_1", "param_2", "param_3","image",
+               "city_region",
+               ]
         for col in cat_col:
             df[col] = lbl.fit_transform(df[col].astype(str))
             gc.collect()
@@ -464,43 +475,48 @@ def feature_Eng_On_Deal_Prob(df, df_train):
     df = pd.merge(df, tmp, how='left', on=["param_2"])
     df2['median_deal_probability_param_2'] = df['median_deal_probability_param_2']
     
+    # 0529
+    tmp = df_train.groupby(["wday"], as_index=False)['deal_probability'].median().rename(columns={'deal_probability':'median_deal_probability_wday'})     
+    df = pd.merge(df, tmp, how='left', on=["wday"])
+    df2['median_deal_probability_wday'] = df['median_deal_probability_wday']
+    
     # 0527
-    tmp = df_train.groupby(["city"], as_index=False)['user_id'].count().rename(columns={'user_id':'count_user_id_city'})     
+    tmp = df.groupby(["city"], as_index=False)['user_id'].count().rename(columns={'user_id':'count_user_id_city'})     
     df = pd.merge(df, tmp, how='left', on=["city"])
     df2['count_user_id_city'] = df['count_user_id_city']
     df2['count_user_id_city_vs_population'] = df2['count_user_id_city'] / df2['population'] * 1000000
     del df2['count_user_id_city']
 #      
     # 0528 : 0.233263
-    tmp = df_train.groupby(["region"], as_index=False)['user_id'].count().rename(columns={'user_id':'count_user_id_region'})     
+    tmp = df.groupby(["region"], as_index=False)['user_id'].count().rename(columns={'user_id':'count_user_id_region'})     
     df = pd.merge(df, tmp, how='left', on=["region"])
     df2['count_user_id_region'] = df['count_user_id_region']
     
-    tmp = df_train.groupby(["wday"], as_index=False)['user_id'].count().rename(columns={'user_id':'count_user_id_wday'})     
+    tmp = df.groupby(["wday"], as_index=False)['user_id'].count().rename(columns={'user_id':'count_user_id_wday'})     
     df = pd.merge(df, tmp, how='left', on=["wday"])
     df2['count_user_id_wday'] = df['count_user_id_wday']
 
-    tmp = df_train.groupby(["price+"], as_index=False)['user_id'].count().rename(columns={'user_id':'count_user_id_price+'})     
+    tmp = df.groupby(["price+"], as_index=False)['user_id'].count().rename(columns={'user_id':'count_user_id_price+'})     
     df = pd.merge(df, tmp, how='left', on=["price+"])
     df2['count_user_id_price+'] = df['count_user_id_price+']
     
-    tmp = df_train.groupby(["param_2"], as_index=False)['user_id'].count().rename(columns={'user_id':'count_user_id_param_2'})     
+    tmp = df.groupby(["param_2"], as_index=False)['user_id'].count().rename(columns={'user_id':'count_user_id_param_2'})     
     df = pd.merge(df, tmp, how='left', on=["param_2"])
     df2['count_user_id_param_2'] = df['count_user_id_param_2']
         
-    tmp = df_train.groupby(["image_top_1"], as_index=False)['user_id'].count().rename(columns={'user_id':'count_user_id_image_top_1'})     
+    tmp = df.groupby(["image_top_1"], as_index=False)['user_id'].count().rename(columns={'user_id':'count_user_id_image_top_1'})     
     df = pd.merge(df, tmp, how='left', on=["image_top_1"])
     df2['count_user_id_image_top_1'] = df['count_user_id_image_top_1']
    
-    tmp = df_train.groupby(["user_type"], as_index=False)['user_id'].count().rename(columns={'user_id':'count_user_id_user_type'})     
+    tmp = df.groupby(["user_type"], as_index=False)['user_id'].count().rename(columns={'user_id':'count_user_id_user_type'})     
     df = pd.merge(df, tmp, how='left', on=["user_type"])
     df2['count_user_id_user_type'] = df['count_user_id_user_type']
 
-    tmp = df_train.groupby(["parent_category_name"], as_index=False)['user_id'].count().rename(columns={'user_id':'count_user_id_parent_category_name'})     
+    tmp = df.groupby(["parent_category_name"], as_index=False)['user_id'].count().rename(columns={'user_id':'count_user_id_parent_category_name'})     
     df = pd.merge(df, tmp, how='left', on=["parent_category_name"])
     df2['count_user_id_parent_category_name'] = df['count_user_id_parent_category_name']
          
-    tmp = df_train.groupby(["item_seq_number+"], as_index=False)['user_id'].count().rename(columns={'user_id':'count_user_id_item_seq_number+'})     
+    tmp = df.groupby(["item_seq_number+"], as_index=False)['user_id'].count().rename(columns={'user_id':'count_user_id_item_seq_number+'})     
     df = pd.merge(df, tmp, how='left', on=["item_seq_number+"])
     df2['count_user_id_item_seq_number+'] = df['count_user_id_item_seq_number+']
           
@@ -562,8 +578,9 @@ full_df['ridge_preds_2'].clip(0.0, 1.0, inplace=True)
 # optimize ram usage
 list_float = ["avg_days_up_user", "avg_times_up_user", "price", "population",
              "price_vs_income","text_feature_2_words_vs_unique","blurinesses","whitenesses","dullnesses","image_quality",
-             "description_words_vs_unique", "title_words_vs_unique", "median_deal_probability_price+",
-             "median_deal_probability_item_seq_number+", "median_deal_probability_param_2", 
+             "description_words_vs_unique", "title_words_vs_unique", 
+             "median_deal_probability_price+", "median_deal_probability_item_seq_number+", "median_deal_probability_param_2", 
+             "median_deal_probability_wday",
              "count_user_id_city_vs_population", "ridge_preds_1", "ridge_preds_2",
              "count_user_id_region", "count_user_id_wday", "count_user_id_price+",
              "count_user_id_param_2", "count_user_id_image_top_1", "count_user_id_user_type",
@@ -707,6 +724,12 @@ print("Done.")
 
 
 """
-[3637]  train's rmse: 0.172567  valid's rmse: 0.215237
+[100]   train's rmse: 0.224799  valid's rmse: 0.226921
+[200]   train's rmse: 0.216856  valid's rmse: 0.221171
+[300]   train's rmse: 0.212721  valid's rmse: 0.219112
+[400]   train's rmse: 0.209271  valid's rmse: 0.217955
+
+
+[3662]  train's rmse: 0.171134  valid's rmse: 0.214972
 
 """
