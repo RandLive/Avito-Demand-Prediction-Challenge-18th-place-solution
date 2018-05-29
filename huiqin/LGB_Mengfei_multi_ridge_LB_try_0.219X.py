@@ -22,7 +22,7 @@ import time
 
 
 print("Starting job at time:",time.time())
-debug =True#False,True
+debug =False#False,True
 print("loading data ...")
 used_cols = ["item_id", "user_id"]
 if debug == False:
@@ -36,7 +36,7 @@ if debug == False:
     test_periods = pd.read_csv("../input/periods_test.csv", parse_dates=["date_from", "date_to"])
 else:
     train_df = pd.read_csv("../input/train.csv", parse_dates = ["activation_date"])
-    train_df = shuffle(train_df, random_state=1234); train_df = train_df.iloc[:50000]
+    train_df = shuffle(train_df, random_state=1234); train_df = train_df.iloc[:5000]
     y = train_df["deal_probability"]
     test_df = pd.read_csv("../input/test.csv",  nrows=1000, parse_dates = ["activation_date"])
     # suppl 
