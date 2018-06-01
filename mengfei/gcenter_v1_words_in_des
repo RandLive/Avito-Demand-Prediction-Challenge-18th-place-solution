@@ -1,0 +1,8 @@
+Training until validation scores don't improve for 200 rounds.
+[100]   train's rmse: 0.224374  valid's rmse: 0.226377
+[200]   train's rmse: 0.21662   valid's rmse: 0.220858
+[300]   train's rmse: 0.21234   valid's rmse: 0.218874
+[400]   train's rmse: 0.209041  valid's rmse: 0.217791
+[500]   train's rmse: 0.206359  valid's rmse: 0.217129
+[600]   train's rmse: 0.203991  valid's rmse: 0.216699
+[700]   train's rmse: 0.201997  valid's rmse: 0.216412
