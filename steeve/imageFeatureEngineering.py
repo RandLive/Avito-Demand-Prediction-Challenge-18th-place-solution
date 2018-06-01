@@ -209,35 +209,35 @@ for img_name in tqdm(img_names):
     img_path = image_dir + img_name
     try:
         id_ = img_name[:-4]
-        dullness = perform_color_analysis(img_path, 'black')
-        whiteness = perform_color_analysis(img_path, 'white')
+#         dullness = perform_color_analysis(img_path, 'black')
+#         whiteness = perform_color_analysis(img_path, 'white')
         average_pixel_width = average_pixel_width_(img_path)
 #         dominant_color = get_dominant_color(img_path)
 #         dominant_red = dominant_color[0] / 255.
 #         dominant_green = dominant_color[1] / 255.
 #         dominant_blue = dominant_color[2] / 255.    
-#         average_color = get_average_color(img_path)
-#         average_red = average_color[0] / 255.
-#         average_green = average_color[1] / 255.
-#         average_blue = average_color[2] / 255.  
-#         image_size = getSize(img_path)
-#         width, height = getDimensions(img_path)
-        bluriness = get_blurrness_score(img_path)
+        average_color = get_average_color(img_path)
+        average_red = average_color[0] / 255.
+        average_green = average_color[1] / 255.
+        average_blue = average_color[2] / 255.  
+        image_size = getSize(img_path)
+        width, height = getDimensions(img_path)
+#         bluriness = get_blurrness_score(img_path)
     except OSError:
         continue    
-    dullnesses.append(dullness)
-    whitenesses.append(whiteness)
+#     dullnesses.append(dullness)
+#     whitenesses.append(whiteness)
     average_pixel_widths.append(average_pixel_width)
 #     dominant_reds.append(dominant_red)
 #     dominant_greens.append(dominant_green)
 #     dominant_blues.append(dominant_blue)
-#     average_reds.append(average_red)
-#     average_greens.append(average_green)
-#     average_blues.append(average_blue)
+    average_reds.append(average_red)
+    average_greens.append(average_green)
+    average_blues.append(average_blue)
 #     image_sizes.append(image_size)
-#     widths.append(width)
-#     heights.append(height)
-    blurinesses.append(bluriness)
+    widths.append(width)
+    heights.append(height)
+#     blurinesses.append(bluriness)
     ids.append(id_)
     
     
@@ -248,7 +248,7 @@ for img_name in tqdm(img_names):
 x = {}
 x['dullnesses'] = dullnesses
 x['whitenesses'] = whitenesses
-x['average_pixel_width'] = average_pixel_width
+x['average_pixel_width'] = average_pixel_widths
 x['dominant_reds'] = dominant_reds
 x['dominant_blues'] = dominant_blues
 x['dominant_greens'] = dominant_greens
@@ -260,7 +260,7 @@ x['widths'] = widths
 x['heights'] = heights
 x['blurinesses'] = blurinesses
 x['ids'] = ids
-with open('../input/test_image_features.p','wb') as f:
+with open('../input/test_image_features_1.p','wb') as f:
     pickle.dump(x, f)  
     
 
@@ -299,35 +299,35 @@ for img_name in tqdm(img_names):
     img_path = image_dir + img_name
     try:
         id_ = img_name[:-4]
-        dullness = perform_color_analysis(img_path, 'black')
-        whiteness = perform_color_analysis(img_path, 'white')
+#         dullness = perform_color_analysis(img_path, 'black')
+#         whiteness = perform_color_analysis(img_path, 'white')
         average_pixel_width = average_pixel_width_(img_path)
 #         dominant_color = get_dominant_color(img_path)
 #         dominant_red = dominant_color[0] / 255.
 #         dominant_green = dominant_color[1] / 255.
 #         dominant_blue = dominant_color[2] / 255.    
-#         average_color = get_average_color(img_path)
-#         average_red = average_color[0] / 255.
-#         average_green = average_color[1] / 255.
-#         average_blue = average_color[2] / 255.  
-#         image_size = getSize(img_path)
-#         width, height = getDimensions(img_path)
-        bluriness = get_blurrness_score(img_path)
+        average_color = get_average_color(img_path)
+        average_red = average_color[0] / 255.
+        average_green = average_color[1] / 255.
+        average_blue = average_color[2] / 255.  
+        image_size = getSize(img_path)
+        width, height = getDimensions(img_path)
+#         bluriness = get_blurrness_score(img_path)
     except OSError:
         continue    
-    dullnesses.append(dullness)
-    whitenesses.append(whiteness)
+#     dullnesses.append(dullness)
+#     whitenesses.append(whiteness)
     average_pixel_widths.append(average_pixel_width)
 #     dominant_reds.append(dominant_red)
 #     dominant_greens.append(dominant_green)
 #     dominant_blues.append(dominant_blue)
-#     average_reds.append(average_red)
-#     average_greens.append(average_green)
-#     average_blues.append(average_blue)
+    average_reds.append(average_red)
+    average_greens.append(average_green)
+    average_blues.append(average_blue)
 #     image_sizes.append(image_size)
-#     widths.append(width)
-#     heights.append(height)
-    blurinesses.append(bluriness)
+    widths.append(width)
+    heights.append(height)
+#     blurinesses.append(bluriness)
     ids.append(id_)
     
     
@@ -338,7 +338,7 @@ for img_name in tqdm(img_names):
 x = {}
 x['dullnesses'] = dullnesses
 x['whitenesses'] = whitenesses
-x['average_pixel_width'] = average_pixel_width
+x['average_pixel_width'] = average_pixel_widths
 x['dominant_reds'] = dominant_reds
 x['dominant_blues'] = dominant_blues
 x['dominant_greens'] = dominant_greens
@@ -350,5 +350,5 @@ x['widths'] = widths
 x['heights'] = heights
 x['blurinesses'] = blurinesses
 x['ids'] = ids
-with open('../input/train_image_features.p','wb') as f:
+with open('../input/train_image_features_1.p','wb') as f:
     pickle.dump(x, f)  
