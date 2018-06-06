@@ -536,4 +536,9 @@ print(ft.head(50))
 
 print("All Done.")
 
-
+[100]   train's rmse: 0.224534  valid's rmse: 0.226934
+[200]   train's rmse: 0.216626  valid's rmse: 0.221355
+[300]   train's rmse: 0.212257  valid's rmse: 0.219317
+[400]   train's rmse: 0.208769  valid's rmse: 0.218093
+[500]   train's rmse: 0.206086  valid's rmse: 0.217387
+[600]   train's rmse: 0.2036    valid's rmse: 0.216893
