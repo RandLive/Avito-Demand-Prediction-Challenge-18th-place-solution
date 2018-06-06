@@ -761,4 +761,16 @@ Training until validation scores don't improve for 200 rounds.
 Early stopping, best iteration is:
 [2555]  train's rmse: 0.176758  valid's rmse: 0.214477
 
-"""
+
+
+newtime
+
+[100]   train's rmse: 0.225288  valid's rmse: 0.22753
+[200]   train's rmse: 0.216673  valid's rmse: 0.221408
+[300]   train's rmse: 0.212054  valid's rmse: 0.219226
+[400]   train's rmse: 0.208763  valid's rmse: 0.218118
+[500]   train's rmse: 0.205846  valid's rmse: 0.217314
+[600]   train's rmse: 0.203222  valid's rmse: 0.216723
+[700]   train's rmse: 0.201043  valid's rmse: 0.216383
+[800]   train's rmse: 0.198895  valid's rmse: 0.21607
+'''
