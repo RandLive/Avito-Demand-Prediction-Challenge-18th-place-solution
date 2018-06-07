@@ -1,0 +1,101 @@
+Training until validation scores don't improve for 200 rounds.
+[100]	train's rmse: 0.224799	valid's rmse: 0.227289
+[200]	train's rmse: 0.217056	valid's rmse: 0.221856
+[300]	train's rmse: 0.211977	valid's rmse: 0.2193
+[400]	train's rmse: 0.208181	valid's rmse: 0.218033
+[500]	train's rmse: 0.205037	valid's rmse: 0.217092
+[600]	train's rmse: 0.202007	valid's rmse: 0.216455
+[700]	train's rmse: 0.199611	valid's rmse: 0.216063
+[800]	train's rmse: 0.197353	valid's rmse: 0.215736
+[900]	train's rmse: 0.195313	valid's rmse: 0.215511
+[1000]	train's rmse: 0.193354	valid's rmse: 0.215327
+[1100]	train's rmse: 0.191538	valid's rmse: 0.215182
+[1200]	train's rmse: 0.189827	valid's rmse: 0.215083
+[1300]	train's rmse: 0.188247	valid's rmse: 0.214992
+[1400]	train's rmse: 0.186749	valid's rmse: 0.214918
+[1500]	train's rmse: 0.185322	valid's rmse: 0.214855
+[1600]	train's rmse: 0.183953	valid's rmse: 0.2148
+[1700]	train's rmse: 0.182662	valid's rmse: 0.214749
+[1800]	train's rmse: 0.181403	valid's rmse: 0.214714
+[1900]	train's rmse: 0.180157	valid's rmse: 0.214674
+[2000]	train's rmse: 0.17899	valid's rmse: 0.214642
+[2100]	train's rmse: 0.1779	valid's rmse: 0.214621
+[2200]	train's rmse: 0.176789	valid's rmse: 0.2146
+[2300]	train's rmse: 0.175707	valid's rmse: 0.214576
+[2400]	train's rmse: 0.174713	valid's rmse: 0.21457
+[2500]	train's rmse: 0.173694	valid's rmse: 0.214561
+[2600]	train's rmse: 0.172688	valid's rmse: 0.214548
+[2700]	train's rmse: 0.171729	valid's rmse: 0.214543
+[2800]	train's rmse: 0.170841	valid's rmse: 0.21453
+[2900]	train's rmse: 0.169933	valid's rmse: 0.214515
+[3000]	train's rmse: 0.168983	valid's rmse: 0.214507
+[3100]	train's rmse: 0.168068	valid's rmse: 0.214493
+[3200]	train's rmse: 0.167188	valid's rmse: 0.21449
+[3300]	train's rmse: 0.166312	valid's rmse: 0.214478
+[3400]	train's rmse: 0.165481	valid's rmse: 0.214481
+[3500]	train's rmse: 0.164636	valid's rmse: 0.214477
+[3600]	train's rmse: 0.163817	valid's rmse: 0.214481
+Early stopping, best iteration is:
+[3470]	train's rmse: 0.164895	valid's rmse: 0.214475
+save model ...
+Model Evaluation Stage
+calculating RMSE ...
+RMSE: 0.21447509387860322
+/home/deepcam/anaconda3/envs/py36/lib/python3.6/site-packages/lightgbm/basic.py:447: UserWarning: Converting data to scipy sparse matrix.
+  warnings.warn('Converting data to scipy sparse matrix.')
+calculating RMSE ...
+training in fold 2
+Modeling Stage ...
+[LightGBM] [Warning] Unknown parameter: tree_method
+Training until validation scores don't improve for 200 rounds.
+[100]	train's rmse: 0.224328	valid's rmse: 0.22624
+[200]	train's rmse: 0.216252	valid's rmse: 0.220803
+[300]	train's rmse: 0.211327	valid's rmse: 0.2184
+[400]	train's rmse: 0.207714	valid's rmse: 0.217237
+[500]	train's rmse: 0.20463	valid's rmse: 0.216466
+[600]	train's rmse: 0.201916	valid's rmse: 0.215868
+[700]	train's rmse: 0.199431	valid's rmse: 0.215455
+[800]	train's rmse: 0.197213	valid's rmse: 0.215161
+[900]	train's rmse: 0.195205	valid's rmse: 0.214912
+[1000]	train's rmse: 0.193385	valid's rmse: 0.21478
+[1100]	train's rmse: 0.191562	valid's rmse: 0.214647
+[1200]	train's rmse: 0.189887	valid's rmse: 0.214526
+[1300]	train's rmse: 0.188267	valid's rmse: 0.214433
+[1400]	train's rmse: 0.186784	valid's rmse: 0.214354
+[1500]	train's rmse: 0.185354	valid's rmse: 0.214305
+[1600]	train's rmse: 0.183929	valid's rmse: 0.21425
+[1700]	train's rmse: 0.182604	valid's rmse: 0.214196
+[1800]	train's rmse: 0.181346	valid's rmse: 0.214156
+[1900]	train's rmse: 0.180145	valid's rmse: 0.214129
+[2000]	train's rmse: 0.178978	valid's rmse: 0.214096
+[2100]	train's rmse: 0.177843	valid's rmse: 0.214081
+[2200]	train's rmse: 0.176799	valid's rmse: 0.214076
+[2300]	train's rmse: 0.17569	valid's rmse: 0.214068
+[2400]	train's rmse: 0.174606	valid's rmse: 0.21404
+[2500]	train's rmse: 0.173621	valid's rmse: 0.214029
+[2600]	train's rmse: 0.172606	valid's rmse: 0.214018
+[2700]	train's rmse: 0.171612	valid's rmse: 0.21402
+[2800]	train's rmse: 0.170665	valid's rmse: 0.214004
+[2900]	train's rmse: 0.16975	valid's rmse: 0.213995
+[3000]	train's rmse: 0.168785	valid's rmse: 0.213988
+[3100]	train's rmse: 0.167912	valid's rmse: 0.21398
+[3200]	train's rmse: 0.167038	valid's rmse: 0.21398
+[3300]	train's rmse: 0.166186	valid's rmse: 0.21398
+[3400]	train's rmse: 0.165342	valid's rmse: 0.213977
+[3500]	train's rmse: 0.164434	valid's rmse: 0.213983
+Early stopping, best iteration is:
+[3376]	train's rmse: 0.165528	valid's rmse: 0.213971
+save model ...
+Model Evaluation Stage
+calculating RMSE ...
+RMSE: 0.21397139167182694
+calculating RMSE ...
+training in fold 3
+training in fold 4
+training in fold 5
+training in fold 6
+training in fold 7
+training in fold 8
+training in fold 9
+training in fold 10
+mean rmse is: 0.2142232427752151
