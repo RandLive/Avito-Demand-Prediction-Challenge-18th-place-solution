@@ -21,7 +21,7 @@ from keras.backend.tensorflow_backend import set_session
 from keras.preprocessing.sequence import pad_sequences
 from keras.layers import Input, Dropout, Dense, concatenate, CuDNNGRU, Embedding, Flatten, Activation, BatchNormalization, PReLU
 from keras.initializers import he_uniform, RandomNormal
-from keras.layers import Conv1D, SpatialDropout1D, Bidirectional, Reshape, Dot, GaussianDropout
+from keras.layers import Conv1D, SpatialDropout1D, Bidirectional, Reshape, Dot, GaussianDropout, Subtract, Lambda, add
 from keras.layers import GlobalMaxPooling1D, GlobalAveragePooling1D
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import MinMaxScaler
@@ -407,10 +407,13 @@ hyper_params={
     'region_embedding': 40, 
     'image_top_1_embedding': 40, 
     'user_type_embedding': 40,
-    'enable_deep':False,
+    'enable_deep':True,
     'enable_fm':False,
+    'enable_fm_first_order':True,
+    'enable_fm_second_order':True,    
     "fc_dim": 64,
-    'learning_rate':0.0001
+    'learning_rate':0.0001,
+    'enable_deep':True,
     
 }
 print(hyper_params, flush=True)
@@ -464,40 +467,67 @@ def get_model():
 #     emb_lat_lon_hdbscan_cluster_05_03 = ( Embedding(max_lat_lon_hdbscan_cluster_05_03, hyper_params['lat_lon_hdbscan_cluster_05_03_embedding'], embeddings_initializer = gauss_init())(lat_lon_hdbscan_cluster_05_03) )
 #     emb_param_123 = ( Embedding(max_param_123, hyper_params['param_123_embedding'], embeddings_initializer = gauss_init())(param_123) )
     
-    att_description = GlobalMaxPooling1D( name='output_des_max' )(emb_description)
-    att_title = GlobalMaxPooling1D(name='output_title_max' )(emb_title)
+    att_description = GlobalMaxPooling1D( name='att_desc' )(emb_description)
+    att_title = GlobalMaxPooling1D(name='att_title' )(emb_title)
 
-    common_list = [
-                    Flatten()(emb_image_top_1),
-                    Flatten()(emb_region),
-                    Flatten()(emb_city),
-                    Flatten()(emb_param_1),
-                    Flatten()(emb_param_2),
-                    Flatten()(emb_param_3),
-                    Flatten()(emb_user_type),
-                    Flatten()(emb_price_p),        
+    Expand_dim = Lambda(lambda x: K.expand_dims(x, axis=1), name='expand_dim')
+    emb_list = [
+                    Expand_dim(att_description),
+                    Expand_dim(att_title),
+                    (emb_image_top_1),
+                    (emb_region),
+                    (emb_city),
+                    (emb_param_1),
+                    (emb_param_2),
+                    (emb_param_3),
+                    (emb_user_type),
+                    (emb_price_p),        
         
                     ]
+    Sum = Lambda(lambda x: K.sum(x, axis=1), name= 'sum')
+    Square = Lambda(lambda x: K.square(x), name='square')
     fm_list = []
     if hyper_params['enable_fm']:
-        fm_description = [ Dot(axes=1)([att_description, common]) for common in common_list]
-        fm_title = [ Dot(axes=1)([att_title, common]) for common in common_list]
-        fm_list += fm_description
-        fm_list += fm_title
-    # emb_list =  [
-    #     (emb_region), 
-    #     (emb_city), 
-    #     ( emb_category_name), 
-    #     (emb_parent_category_name),
-    #     (emb_user_type), 
-    #     (emb_param_1), 
-    #     (emb_param_2), 
-    #     (emb_param_3), 
-    #     (emb_image_top_1),
-    # ]
-    # emb_concat = concatenate(emb_list, axis=2)
-    # emb_concat = GaussianDropout(0.2)(emb_concat)
-    # emb_gru = CuDNNGRU(50)(emb_concat)
+        if hyper_params['enable_fm_first_order']:
+            shared_embedding = Embedding(max_text, 1, embeddings_initializer = gauss_init())
+            bias_description = shared_embedding (description)
+            bias_title = shared_embedding (title)            
+            bias_user_type =  ( Embedding(max_user_type, 1, embeddings_initializer = gauss_init())(user_type)    )
+            bias_param_1 =  ( Embedding(max_param_1, 1, embeddings_initializer = gauss_init())(param_1) )
+            bias_param_2 =  ( Embedding(max_param_2, 1, embeddings_initializer = gauss_init())(param_2) )
+            bias_param_3 = ( Embedding(max_param_3, 1, embeddings_initializer = gauss_init())(param_3) )
+            bias_category_name =   ( Embedding(max_category_name, 1, embeddings_initializer = gauss_init())(category_name) )
+            bias_parent_category_name =   ( Embedding(max_parent_category_name, 1, embeddings_initializer = gauss_init())(parent_category_name) )
+            bias_region = ( Embedding(max_region, 1, embeddings_initializer = gauss_init())(region) )
+            bias_city = ( Embedding(max_city, 1, embeddings_initializer = gauss_init())(city) )
+            bias_image_top_1 =  ( Embedding(max_image_top_1, 1, embeddings_initializer = gauss_init())(image_top_1) )
+            bias_price_p = ( Embedding(max_price_p, 1, embeddings_initializer = gauss_init())(price_p) )
+            fm_first_order_list = [
+                Flatten()(bias_description),
+                Flatten()(bias_title), 
+                Flatten()(bias_image_top_1),
+                Flatten()(bias_region),
+                Flatten()(bias_city),
+                Flatten()(bias_param_1),
+                Flatten()(bias_param_2),
+                Flatten()(bias_param_3),
+                Flatten()(bias_user_type),
+                Flatten()(bias_price_p), 
+            ]
+            tmp_first_order = concatenate(fm_first_order_list, axis=1)
+            fm_list.append(tmp_first_order)
+        if hyper_params['enable_fm_second_order']:
+            emb_concat = concatenate(emb_list, axis=1)
+            emb_sum_squared = Square(Sum(emb_concat))
+            emb_squared_sum = Sum(Square(emb_concat))
+#             fm_second_order = 0.5 * (emb_sum_squared - emb_squared_sum)
+#             print(emb_sum_squared)
+#             print( emb_squared_sum)
+            fm_second_subtract = Subtract()([emb_sum_squared, emb_squared_sum])
+            fm_second_order = Lambda(lambda x: x * 0.5)(fm_second_subtract)
+            
+            fm_list.append(fm_second_order)
+
 
     final_list = [ att_description, 
                     att_title, 
@@ -512,36 +542,76 @@ def get_model():
                     Flatten()   (emb_param_3), 
                     Flatten()  (emb_image_top_1),  
                     Flatten()  (emb_price_p),  
-                    *continuous_inputs]
-#     deep_list = [
-#         fm_description,
-#         fm_title,
-#         att_description,
-#         att_title,
-#     ]
+                    *continuous_inputs
+                 ]
+    context = concatenate([
+                Flatten()  (emb_region), 
+                Flatten()   (emb_city), 
+                Flatten() ( emb_category_name), 
+                Flatten()  (emb_parent_category_name),
+                Flatten() (emb_user_type), 
+                Flatten()  (emb_param_1), 
+                Flatten()  (emb_param_2), 
+                Flatten()   (emb_param_3), 
+                Flatten()  (emb_image_top_1),  
+                Flatten()  (emb_price_p),  
+                *continuous_inputs],axis=-1, name="context")
+    deep_list = []
+    if hyper_params['enable_deep']:
+        common_list = [
+                    (emb_image_top_1),
+                    (emb_region),
+                    (emb_city),
+                    (emb_param_1),
+                    (emb_param_2),
+                    (emb_param_3),
+                    (emb_user_type),
+                    (emb_price_p),       
+                    ]
+        tmp_common = concatenate(common_list, axis=1)
+        
+         # word level fm for seq_name and others
+        tmp_des = concatenate([emb_description, tmp_common], axis=1)
+        
+        sum_squared_des = Square(Sum(tmp_des))
+        squared_sum_des = Sum(Square(tmp_des))
+#         fm_description = 0.5 * (sum_squared_des - squared_sum_des)
+        fm_description_subtract = Subtract()([sum_squared_des, squared_sum_des])
+        fm_description = Lambda(lambda x: x * 0.5)(fm_description_subtract)
 
-
+        # word level fm for seq_item_desc and others
+        tmp_title = concatenate([emb_title, tmp_common], axis=1)
+        sum_squared_title = Square(Sum(tmp_title))
+        squared_sum_title = Sum(Square(tmp_title))
+#         fm_title = 0.5 * (sum_squared_title - squared_sum_title)
+        fm_title_subtract = Subtract()([sum_squared_title, squared_sum_title])
+        fm_title = Lambda(lambda x: x * 0.5)(fm_title_subtract)
+        deep_list += [
+                    att_description,
+                    att_title,
+                    context,
+                    fm_description,
+                    fm_title,
+                ]
+        deep_list.extend(fm_list)
+        deep_in = concatenate(deep_list, axis=-1, name="deep_concat")
+        deep_x = BatchNormalization()(deep_in)
+        deep_x = Dense(512)(deep_x)
+        deep_x = Activation('relu')(deep_x)
+        deep_x = Dense(128)(deep_x)
+        deep_x = Activation('relu')(deep_x)
+        deep_x = Dense(64)(deep_x)
+        deep_out = Activation('relu')(deep_x)
+        fm_list.append(deep_out)
     
-#     deep_x = 
-    x = concatenate(final_list )
-    x = BatchNormalization()(x)
+    fm_list.extend(continuous_inputs)            
+    x = concatenate(fm_list)
+    if not hyper_params['enable_fm']:
+        x = deep_out
     
-    x = Dense(512)(x)
-
-
-#     x = Activation('relu')(x)
-#     x = PReLU()(x)
-#     x = Dense(128)(x)
-    x = Activation('relu')(x)
-    x = Dense(64)(x)
-    if hyper_params['enable_fm']:
-        x = concatenate([x, *fm_list])
-    x = Activation('relu')(x)
-#     x = PReLU()(x)
-    x = Dense(1, activation="sigmoid") (x)
+    out = Dense(1, activation="sigmoid") (x)
     model = Model([description, title,  user_type , category_name, parent_category_name, param_1, param_2, param_3,
-                   region,city, image_top_1, price_p, *continuous_inputs] ,
-                   x)
+                   region,city, image_top_1, price_p, *continuous_inputs] ,out)
     optimizer = Adam(hyper_params['learning_rate'], amsgrad=True)
 #     optimizer = Nadam(hyper_params['learning_rate'])
     model.compile(loss="mse", optimizer=optimizer)
@@ -632,7 +702,7 @@ batch_size = 1024
 nfold = 10
 rmse_list = []
 
-fname = 'emb_all_80_price_ridge_avgday_avgtime_nui_deslen_population_income_logblur_logwhite_logdull_price_p4__10fold'
+fname = 'emb_all_80_price_ridge_avgday_avgtime_nui_deslen_population_income_logblur_logwhite_logdull_price_p4_xnn_doly_10fold'
 # fname = 'mercari_no2_sol_emb_bigru_60_5fold'
 # fname = 'mercari_no2_sol_emb_cnn_f12_5fold'
 
@@ -683,3 +753,4 @@ sub.to_csv(f'../output/{fname}_test.csv', index=False)
 # val_predicts['user_id'] = train_user_ids
 # val_predicts['item_id'] = train_item_ids
 # val_predicts.to_csv(f'../output/{fname}_train.csv', index=False)
+
