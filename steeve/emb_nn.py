@@ -31,6 +31,7 @@ from nltk import ngrams
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import mean_squared_error
 
+
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
@@ -57,28 +58,6 @@ test = test.merge(gp, on='user_id', how='left')
 
  
 
-# with open('../input/resnet50_features_train.p', 'rb') as f:
-#     x = pickle.load(f)
-
-# train_features = np.reshape(x['features'], (len(x['features']), -1))
-# train_ids = x['ids']
-
-# with open('../input/resnet50_features_test.p', 'rb') as f:
-#     x = pickle.load(f)
-
-# test_features = np.reshape(x['features'], (len(x['features']), -1))
-# test_ids = x['ids']    
-
-# res_feat_numbers = test_features.shape[1]
-# res_cols = [ f'res_{i}' for i in range(res_feat_numbers)]
-# incep_train_image_df = pd.DataFrame(train_features, columns = res_cols)
-# incep_test_image_df = pd.DataFrame(test_features, columns = res_cols)
-# incep_train_image_df['image'] = train_ids
-# incep_test_image_df['image'] = test_ids
-# train = train.join(incep_train_image_df.set_index('image'), on='image')
-# test = test.join(incep_test_image_df.set_index('image'), on='image')  
-
-# print(train.columns)    
 with open('../input/train_image_features.p','rb') as f:
     x = pickle.load(f)
     
@@ -89,6 +68,9 @@ train_average_pixel_width = x['average_pixel_width']
 train_widths = x['widths']
 train_heights = x['heights']
 train_ids = x['ids']
+
+del x
+gc.collect()
 
 with open('../input/test_image_features.p','rb') as f:
     x = pickle.load(f)
@@ -128,15 +110,58 @@ incep_test_image_df['image'] = test_ids
 train = train.join(incep_train_image_df.set_index('image'), on='image')
 test = test.join(incep_test_image_df.set_index('image'), on='image')
 
+with open('../input/train_image_features_1.p','rb') as f:
+    x = pickle.load(f)
+    
+train_average_pixel_width = x['average_pixel_width']
+train_average_reds = x['average_reds']
+train_average_greens = x['average_greens']
+train_average_blues = x['average_blues']
+train_ids = x['ids']
+
+del x
+gc.collect()
+
+with open('../input/test_image_features_1.p','rb') as f:
+    x = pickle.load(f)
+
+test_average_pixel_width = x['average_pixel_width']
+test_average_reds = x['average_reds']
+test_average_greens = x['average_greens']
+test_average_blues = x['average_blues']
+test_ids = x['ids']  
+
+del x
+gc.collect()
+
+incep_train_image_df = pd.DataFrame(train_average_pixel_width, columns = ['average_pixel_width'])
+incep_test_image_df = pd.DataFrame(test_average_pixel_width, columns = [f'average_pixel_width'])
+incep_train_image_df['image'] = train_ids
+incep_test_image_df['image'] = test_ids
+train = train.join(incep_train_image_df.set_index('image'), on='image')
+test = test.join(incep_test_image_df.set_index('image'), on='image')
+
+incep_train_image_df = pd.DataFrame(train_average_reds, columns = ['average_reds'])
+incep_test_image_df = pd.DataFrame(test_average_reds, columns = [f'average_reds'])
+incep_train_image_df['image'] = train_ids
+incep_test_image_df['image'] = test_ids
+train = train.join(incep_train_image_df.set_index('image'), on='image')
+test = test.join(incep_test_image_df.set_index('image'), on='image')
+
+incep_train_image_df = pd.DataFrame(train_average_blues, columns = ['average_blues'])
+incep_test_image_df = pd.DataFrame(test_average_blues, columns = [f'average_blues'])
+incep_train_image_df['image'] = train_ids
+incep_test_image_df['image'] = test_ids
+train = train.join(incep_train_image_df.set_index('image'), on='image')
+test = test.join(incep_test_image_df.set_index('image'), on='image')
 
 
-# incep_train_image_df = pd.DataFrame(train_average_pixel_width, columns = ['average_pixel_width'])
-# incep_test_image_df = pd.DataFrame(test_average_pixel_width, columns = [f'average_pixel_width'])
-# incep_train_image_df['image'] = train_ids
-# incep_test_image_df['image'] = test_ids
-# train = train.join(incep_train_image_df.set_index('image'), on='image')
-# test = test.join(incep_test_image_df.set_index('image'), on='image')
-
+incep_train_image_df = pd.DataFrame(train_average_greens, columns = ['average_greens'])
+incep_test_image_df = pd.DataFrame(test_average_greens, columns = [f'average_greens'])
+incep_train_image_df['image'] = train_ids
+incep_test_image_df['image'] = test_ids
+train = train.join(incep_train_image_df.set_index('image'), on='image')
+test = test.join(incep_test_image_df.set_index('image'), on='image')
 data = pd.concat([train, test], axis=0, sort=False)
 
 with open('../input/region_income.csv', 'r')as f:
@@ -149,13 +174,11 @@ for line in region_incomes:
 
 data['income'] = data.region.map(region_income_map )
 
-# city_region_unique = pd.read_csv('../input/avito_region_city_features.csv')
-
-# data = data.merge(city_region_unique, how="left", on=["region", "city"])
     
 text_col = ['title', 'description', 'param_1', 'param_2', 'param_3']
 for c in text_col:
     data[c].fillna(f'No {c}', inplace=True)
+    train[c].fillna(f'No {c}', inplace=True)
 
 # mean_image_quality = data.loc[~data.image_quality.isna(), 'image_quality'].mean()
 # data['image_quality'].fillna(mean_image_quality, inplace=True)    
@@ -175,8 +198,11 @@ data['whitenesses'].fillna(mean_whitenesses, inplace=True)
 # mean_heights= data.loc[~data.heights.isna(), 'heights'].mean()
 # data['heights'].fillna(mean_heights, inplace=True)
 
-# mean_average_pixel_width = data.loc[~data.average_pixel_width.isna(), 'average_pixel_width'].mean()
-# data['average_pixel_width'].fillna(mean_average_pixel_width, inplace=True)
+
+data['average_pixel_width'].fillna(0, inplace=True)
+data['average_reds'].fillna(0, inplace=True)
+data['average_greens'].fillna(0, inplace=True)
+data['average_blues'].fillna(0, inplace=True)
 
 city_population = pd.read_csv('../input/city_population_wiki_v3.csv')
 data = data.merge(city_population, on='city', how='left')
@@ -186,10 +212,19 @@ data['population'].fillna(mean_population, inplace=True)
 
 data['des_len'] = data.description.str.len()
 data['des_nwords'] = data.description.str.split().apply(len)  
+train['des_len'] = train.description.str.len()
+train['des_nwords'] = train.description.str.split().apply(len)  
 # data['price/income'] = data['price']/ data['income']
+
+data['des_len_log'] = (np.log(data['des_len']) * 4).astype(np.int8)
+data['des_nwords_log'] = (np.log1p(data['des_nwords']) * 20).astype(np.int8)
+train['des_len_log'] = (np.log(train['des_len']) * 4).astype(np.int8)
+train['des_nwords_log'] = (np.log1p(train['des_nwords']) * 20).astype(np.int8)
 
 mean_price = data.loc[~data.price.isna(), 'price'].mean()
 data['price'].fillna(mean_price, inplace=True)
+train['price'].fillna(mean_price, inplace=True)
+
 #log scale
 data['item_seq_number'] = np.log1p(data['item_seq_number']).astype(np.float32)
 data['price'] = np.log1p(data['price']).astype(np.float32)
@@ -198,13 +233,11 @@ data['income'] = np.log1p(data['income']).astype(np.float32)
 data['blurinesses'] = np.log1p(data['blurinesses']).astype(np.float32)
 data['whitenesses'] = np.log1p(data['whitenesses']).astype(np.float32)
 data['dullnesses'] = np.log1p(data['dullnesses']).astype(np.float32)
+# data['average_pixel_width'] = np.log1p(data['average_pixel_width']).astype(np.float32)
 # data['widths'] = np.log1p(data['widths']).astype(np.float32)
 # data['heights'] = np.log1p(data['heights']).astype(np.float32)
-# data['latitude'] = MinMaxScaler().fit_transform(data['latitude'].values.reshape(-1,1))
-# data['longitude'] = MinMaxScaler().fit_transform(data['longitude'].values.reshape(-1,1))
 # data['latitude'] = np.log1p(data['latitude']).astype(np.float32)
 # data['longitude'] = np.log1p(data['longitude']).astype(np.float32)
-# data['average_pixel_width'] = np.log1p(data['average_pixel_width']).astype(np.float32)
 # data['param_123'] = data['param_1'].astype(str) +'_' + data['param_2'].astype(str) + '_' +  data['param_3'].astype(str)
 # data['text_feat_len'] = data.text_feat.str.len()
 # data['text_feat_nwords'] = data.text_feat.str.split().apply(len)  
@@ -216,6 +249,7 @@ data['dullnesses'] = np.log1p(data['dullnesses']).astype(np.float32)
 # data['is_in_desc_canon'] = data.title.str.contains('canon').map({True:1, False:0}).astype(np.uint8)
 # ratio
 data["price_p"] = np.round(data["price"] * 4).astype(np.int16)
+train["price_p"] = np.round(train["price"] * 4).astype(np.int16)
 
 
 cont_features = ['price']
@@ -228,51 +262,44 @@ cont_features.append('avg_times_up_user')
 cont_features.append('n_user_items')
 cont_features.append('population')
 cont_features.append('income')
-# cont_features.append('price/income')
+
 cont_features.append('whitenesses')
 cont_features.append('dullnesses')
 cont_features.append('blurinesses')
-# cont_features.append('is_in_desc_canon')
-# cont_features.append('is_in_desc_iphone')
-# cont_features.append('is_in_desc_ipad')
-# cont_features.append('is_in_desc_samsung')
-# cont_features.append('longitude')
-# cont_features.append('latitude')
-# cont_features.extend(res_cols)
-# cont_features.append('widths')
-# cont_features.append('heights')
-# cont_features.append('image_quality')
+cont_features.append('average_pixel_width')
+cont_features.append('average_reds')
+cont_features.append('average_greens')
+cont_features.append('average_blues')
 
+data["item_seq_number_cat"] = np.round(data["item_seq_number"] * 8).astype(int) 
+train["item_seq_number_cat"] = np.round(train["item_seq_number"] * 8).astype(int) 
 
-# cont_features.append('text_feat_len')
-# cont_features.append('text_feat_nwords')
+agg_cols = ['param_1', 'category_name', 'region', 'user_type', 'price_p', 'item_seq_number_cat', 'city', 'parent_category_name', 'des_len_log', 'des_nwords_log']
 
-# cont_features.append('title_len')
-# cont_features.append('title_nwords')
+for c in tqdm(agg_cols):
+    gp = train.groupby(c)['deal_probability']
+    mean = gp.mean()
+    data[str(c) + '_deal_probability_avg'] = data[c].map(mean)
+    cont_features.append(str(c) + '_deal_probability_avg')    
 
-agg_cols = ['param_1']
+data.fillna(0, inplace=True)    
 
-# for c in tqdm(agg_cols):
-#     gp = train.groupby(c)['deal_probability']
-#     mean = gp.mean()
-#     std  = gp.std()
-#     data[c + '_deal_probability_avg'] = data[c].map(mean)
-#     cont_features.append(c + '_deal_probability_avg')    
-#     data[c + '_deal_probability_std'] = data[c].map(std)
-
-#     cont_features.append(c + '_deal_probability_std')
+# normalizing
+# for c in tqdm(cont_features):
+#     data[c] = MinMaxScaler().fit_transform(data[c].values.reshape(-1,1))    
     
-# data["item_seq_number_cat"] = np.round(data["item_seq_number"]/100).astype(int) 
-cate_cols = ['city',  'category_name', 'user_type','parent_category_name','region','param_1','param_2','param_3', 'image_top_1', 'price_p']
+cate_cols = ['city',  'category_name', 'user_type','parent_category_name','region','param_1','param_2','param_3', 'image_top_1', 'price_p', 'item_seq_number_cat']
 
 for c in tqdm(cate_cols):    
     data[c] = LabelEncoder().fit_transform(data[c].values.astype('str'))    
 
-    
+
 
 new_data = data.drop(['user_id','description','image',
                       'item_id','title'], axis=1)
-new_data.fillna(0, inplace= True)
+# new_data.fillna(0, inplace= True)
+
+
 
 X = new_data.loc[new_data.activation_date<=pd.to_datetime('2017-04-07')]
 X_te = new_data.loc[new_data.activation_date>=pd.to_datetime('2017-04-08')]
@@ -292,27 +319,11 @@ with open(f'../input/train_title_seq.p','rb') as f:
 with open(f'../input/test_title_seq.p','rb') as f:
     test_title_seq = pickle.load(f)
     
-# with open(f'../input/train_des_vec_word_swr_lower_rmspecial_50000_lda_50_5000_iter.p','rb') as f:
-#     train_des_vec = pickle.load(f)    
-    
-# with open(f'../input/test_des_vec_word_swr_lower_rmspecial_50000_lda_50_5000_iter.p','rb') as f:
-#     test_des_vec = pickle.load(f)        
-    
-# lda_cols = [f'lda{i}' for i in range(50)]    
-# train_lda = pd.DataFrame(train_des_vec, columns = lda_cols)    
-# test_lda = pd.DataFrame(test_des_vec, columns = lda_cols)
-# cont_features.extend(lda_cols)
-# X = pd.concat([X, train_lda], axis=1)
-# X_te = pd.concat([X_te, test_lda], axis=1)
+
 
 print(f'cont_features: {cont_features}', flush=True)
 print(f'columns: {new_data.columns}', flush=True)
-
-# with open('../input/train_des_vec_word_swr_lower_rmspecial_10000.p','rb') as f:
-#     train_des_vec = pickle.load(f)    
-
-# with open('../input/test_des_vec_word_swr_lower_rmspecial_10000.p','rb') as f:
-#     test_des_vec = pickle.load(f)        
+     
 
 
 with open(f'../input/word_index.p','rb') as f:
@@ -338,20 +349,8 @@ def get_keras_fasttext(df, des_seq, title_seq):
         'city': np.array(df['city']),
         'image_top_1': np.array(df['image_top_1']),
         'price_p': np.array(df['price_p']),
-        # 'lat_lon_hdbscan_cluster_20_03':np.array(df['lat_lon_hdbscan_cluster_20_03']),
-        # 'lat_lon_hdbscan_cluster_10_03':np.array(df['lat_lon_hdbscan_cluster_10_03']),
-        # 'lat_lon_hdbscan_cluster_05_03':np.array(df['lat_lon_hdbscan_cluster_05_03']),        
-#         'param_123': np.array(df['param_123']),
-#         'description_vector':des_vec,
-#         'price': np.array(df['price']),
-#         'image_top_1_deal_probability_avg': np.array(df['image_top_1_deal_probability_avg']),
-#         'image_top_1_deal_probability_std': np.array(df['image_top_1_deal_probability_std']),
-#         'item_seq_number_deal_probability_avg': np.array(df['item_seq_number_deal_probability_avg']),
-#         'item_seq_number_deal_probability_std': np.array(df['item_seq_number_deal_probability_std']),   
-#         'res_feat':np.array(df[:,res_cols])
-#         'cont_features':np.reshape([df['price'].values]  \
-#                                        +[ df[c+ '_deal_probability_avg'].values for c in agg_cols]\
-#                                       +[ df[c+ '_deal_probability_std'].values for c in agg_cols], (len(df), -1) )
+        'item_seq_number_cat' : np.array(df['item_seq_number_cat']),
+
     }
     for feat in cont_features:
         X[feat] = np.array(df[feat])
@@ -371,7 +370,7 @@ max_region = np.max(new_data['region'].max()) + 1
 max_city = np.max(new_data['city'].max()) + 1
 max_image_top_1 = np.max(new_data['image_top_1'].max()) + 1
 max_price_p = np.max(new_data['price_p'].max())+1
-# max_item_seq_number_cat = np.max(new_data['item_seq_number_cat'].max()) + 1
+max_item_seq_number_cat = np.max(new_data['item_seq_number_cat'].max()) + 1
 # max_lat_lon_hdbscan_cluster_20_03 = np.max(new_data['lat_lon_hdbscan_cluster_20_03'].max())+1
 # max_lat_lon_hdbscan_cluster_10_03 = np.max(new_data['lat_lon_hdbscan_cluster_10_03'].max())+1
 # max_lat_lon_hdbscan_cluster_05_03 = np.max(new_data['lat_lon_hdbscan_cluster_05_03'].max())+1
@@ -388,27 +387,10 @@ x_test = get_keras_fasttext(X_te, test_des_seq, test_title_seq)
 # print(f"cont size: {x_train['cont_features'].shape}")    
 
 hyper_params={
-    'description_embedding': 40, 
     'description_filters':40,
-    'title_filters':40,
-    'title_embedding': 40, 
-    'category_name_embedding': 40,
-    'parent_category_name_embedding': 40, 
-    'param_1_embedding': 40, 
-    'param_2_embedding': 40, 
-    'param_3_embedding': 40, 
-    # 'item_seq_number_cat_embedding': 40,
-    'lat_lon_hdbscan_cluster_20_03_embedding':40,
-    'lat_lon_hdbscan_cluster_10_03_embedding':40,
-    'lat_lon_hdbscan_cluster_05_03_embedding':40,    
-#     'param_123_embedding': 40, 
     'embedding_dim':80,
-    'city_embedding': 40, 
-    'region_embedding': 40, 
-    'image_top_1_embedding': 40, 
-    'user_type_embedding': 40,
     'enable_deep':False,
-    'enable_fm':False,
+    'enable_fm':True,
     "fc_dim": 64,
     'learning_rate':0.0001
     
@@ -430,10 +412,8 @@ def get_model():
     city = Input(shape=[1], name="city")
     image_top_1 = Input(shape=[1], name="image_top_1")
     price_p = Input(shape=[1], name='price_p')
-#     item_seq_number_cat = Input(shape=[1], name='item_seq_number_cat')
+    item_seq_number_cat = Input(shape=[1], name='item_seq_number_cat')
 #     lat_lon_hdbscan_cluster_05_03 = Input(shape=[1], name='lat_lon_hdbscan_cluster_05_03')
-
-#     cat_inputs = [Input(shape=[1], name=feat) for feat in cate_cols]
 
     
     continuous_inputs = [Input(shape=[1], name=feat) for feat in cont_features]
@@ -460,13 +440,14 @@ def get_model():
     emb_city = ( Embedding(max_city, hyper_params['embedding_dim'], embeddings_initializer = gauss_init())(city) )
     emb_image_top_1 =  ( Embedding(max_image_top_1, hyper_params['embedding_dim'], embeddings_initializer = gauss_init())(image_top_1) )
     emb_price_p = ( Embedding(max_price_p, hyper_params['embedding_dim'], embeddings_initializer = gauss_init())(price_p) )
-#     emb_item_seq_number_cat = ( Embedding(max_item_seq_number_cat, hyper_params['item_seq_number_cat_embedding'], embeddings_initializer = gauss_init())(item_seq_number_cat) )
+    emb_item_seq_number_cat = ( Embedding(max_item_seq_number_cat, hyper_params['embedding_dim'], embeddings_initializer = gauss_init())(item_seq_number_cat) )
 #     emb_lat_lon_hdbscan_cluster_05_03 = ( Embedding(max_lat_lon_hdbscan_cluster_05_03, hyper_params['lat_lon_hdbscan_cluster_05_03_embedding'], embeddings_initializer = gauss_init())(lat_lon_hdbscan_cluster_05_03) )
 #     emb_param_123 = ( Embedding(max_param_123, hyper_params['param_123_embedding'], embeddings_initializer = gauss_init())(param_123) )
     
     att_description = GlobalMaxPooling1D( name='output_des_max' )(emb_description)
     att_title = GlobalMaxPooling1D(name='output_title_max' )(emb_title)
 
+    cont_denses = [ Dense(hyper_params['embedding_dim'])(c) for c in continuous_inputs]
     common_list = [
                     Flatten()(emb_image_top_1),
                     Flatten()(emb_region),
@@ -476,14 +457,20 @@ def get_model():
                     Flatten()(emb_param_3),
                     Flatten()(emb_user_type),
                     Flatten()(emb_price_p),        
-        
+                    *cont_denses,
+                    att_description,
+                    att_title,
                     ]
     fm_list = []
     if hyper_params['enable_fm']:
-        fm_description = [ Dot(axes=1)([att_description, common]) for common in common_list]
-        fm_title = [ Dot(axes=1)([att_title, common]) for common in common_list]
-        fm_list += fm_description
-        fm_list += fm_title
+#         fm_description = [ Dot(axes=1)([att_description, common]) for common in common_list]
+#         fm_title = [ Dot(axes=1)([att_title, common]) for common in common_list]
+#         fm_list += fm_description
+#         fm_list += fm_title
+        for i in range(len(common_list)):
+            for j in range(i+1, len(common_list)):
+                inner_product = Dot(axes=1)([common_list[i], common_list[j]])
+                fm_list.append(inner_product)
     # emb_list =  [
     #     (emb_region), 
     #     (emb_city), 
@@ -512,6 +499,7 @@ def get_model():
                     Flatten()   (emb_param_3), 
                     Flatten()  (emb_image_top_1),  
                     Flatten()  (emb_price_p),  
+                    Flatten()  (emb_item_seq_number_cat),                    
                     *continuous_inputs]
 #     deep_list = [
 #         fm_description,
@@ -524,6 +512,8 @@ def get_model():
     
 #     deep_x = 
     x = concatenate(final_list )
+    if hyper_params['enable_fm']:
+        x = concatenate([x, *fm_list])
     x = BatchNormalization()(x)
     
     x = Dense(512)(x)
@@ -534,13 +524,12 @@ def get_model():
 #     x = Dense(128)(x)
     x = Activation('relu')(x)
     x = Dense(64)(x)
-    if hyper_params['enable_fm']:
-        x = concatenate([x, *fm_list])
+    
     x = Activation('relu')(x)
 #     x = PReLU()(x)
     x = Dense(1, activation="sigmoid") (x)
     model = Model([description, title,  user_type , category_name, parent_category_name, param_1, param_2, param_3,
-                   region,city, image_top_1, price_p, *continuous_inputs] ,
+                   region,city, image_top_1, price_p, item_seq_number_cat, *continuous_inputs] ,
                    x)
     optimizer = Adam(hyper_params['learning_rate'], amsgrad=True)
 #     optimizer = Nadam(hyper_params['learning_rate'])
@@ -562,7 +551,7 @@ def train_bagging(X, y, fold_count):
         
         fold_id +=1 
         if fold_id >= 1: exit()
-#         if fold_id !=0: continue
+
         print(f'fold number: {fold_id}', flush=True)
         
         
@@ -632,7 +621,7 @@ batch_size = 1024
 nfold = 10
 rmse_list = []
 
-fname = 'emb_all_80_price_ridge_avgday_avgtime_nui_deslen_population_income_logblur_logwhite_logdull_price_p4__10fold'
+fname = 'emb_all_80_itseqcat_price_p4_pr1_catn_rg_ut_p_ict_pc_dll_dnl_rgb_apw_concattextcross_10fold'
 # fname = 'mercari_no2_sol_emb_bigru_60_5fold'
 # fname = 'mercari_no2_sol_emb_cnn_f12_5fold'
 
@@ -670,16 +659,16 @@ sub['deal_probability'].clip(0.0, 1.0, inplace=True)
 sub.to_csv(f'../output/{fname}_test.csv', index=False)
 
 
-# print('storing oof prediction', flush=True)
-# train_data = pd.read_csv('../input/train.csv.zip')
-# label = ['deal_probability']
-# train_user_ids = train_data.user_id.values
-# train_item_ids = train_data.item_id.values
+print('storing oof prediction', flush=True)
+train_data = pd.read_csv('../input/train.csv.zip')
+label = ['deal_probability']
+train_user_ids = train_data.user_id.values
+train_item_ids = train_data.item_id.values
 
-# train_item_ids = train_item_ids.reshape(len(train_item_ids), 1)
-# train_user_ids = train_user_ids.reshape(len(train_user_ids), 1)
+train_item_ids = train_item_ids.reshape(len(train_item_ids), 1)
+train_user_ids = train_user_ids.reshape(len(train_user_ids), 1)
 
-# val_predicts = pd.DataFrame(data=val_predict, columns= label)
-# val_predicts['user_id'] = train_user_ids
-# val_predicts['item_id'] = train_item_ids
-# val_predicts.to_csv(f'../output/{fname}_train.csv', index=False)
+val_predicts = pd.DataFrame(data=val_predict, columns= label)
+val_predicts['user_id'] = train_user_ids
+val_predicts['item_id'] = train_item_ids
+val_predicts.to_csv(f'../output/{fname}_train.csv', index=False)
