@@ -1,0 +1,257 @@
+cont_features: ['price', 'des_len', 'des_nwords', 'item_seq_number', 'ridge_feature', 'avg_days_up_user', 'avg_times_up_user', 'n_user_items', 'population', 'income', 'whitenesses', 'dullnesses', 'blurinesses', 'average_pixel_width', 'average_reds', 'average_greens', 'average_blues', 'param_1_deal_probability_avg', 'category_name_deal_probability_avg', 'region_deal_probability_avg', 'user_type_deal_probability_avg', 'price_p_deal_probability_avg', 'item_seq_number_cat_deal_probability_avg', 'city_deal_probability_avg', 'parent_category_name_deal_probability_avg', 'des_len_log_deal_probability_avg', 'des_nwords_log_deal_probability_avg']
+columns: Index(['region', 'city', 'parent_category_name', 'category_name', 'param_1',
+       'param_2', 'param_3', 'price', 'item_seq_number', 'activation_date',
+       'user_type', 'image_top_1', 'deal_probability', 'ridge_feature',
+       'avg_days_up_user', 'avg_times_up_user', 'n_user_items', 'blurinesses',
+       'dullnesses', 'whitenesses', 'average_pixel_width', 'average_reds',
+       'average_blues', 'average_greens', 'income', 'population', 'des_len',
+       'des_nwords', 'des_len_log', 'des_nwords_log', 'price_p',
+       'item_seq_number_cat', 'param_1_deal_probability_avg',
+       'category_name_deal_probability_avg', 'region_deal_probability_avg',
+       'user_type_deal_probability_avg', 'price_p_deal_probability_avg',
+       'item_seq_number_cat_deal_probability_avg', 'city_deal_probability_avg',
+       'parent_category_name_deal_probability_avg',
+       'des_len_log_deal_probability_avg',
+       'des_nwords_log_deal_probability_avg'],
+      dtype='object')
+{'description_filters': 40, 'embedding_dim': 80, 'enable_deep': False, 'enable_fm': False, 'fc_dim': 64, 'learning_rate': 0.0001}
+__________________________________________________________________________________________________
+Layer (type)                    Output Shape         Param #     Connected to                     
+==================================================================================================
+description (InputLayer)        (None, 80)           0                                            
+__________________________________________________________________________________________________
+title (InputLayer)              (None, 30)           0                                            
+__________________________________________________________________________________________________
+region (InputLayer)             (None, 1)            0                                            
+__________________________________________________________________________________________________
+city (InputLayer)               (None, 1)            0                                            
+__________________________________________________________________________________________________
+category_name (InputLayer)      (None, 1)            0                                            
+__________________________________________________________________________________________________
+parent_category_name (InputLaye (None, 1)            0                                            
+__________________________________________________________________________________________________
+user_type (InputLayer)          (None, 1)            0                                            
+__________________________________________________________________________________________________
+param_1 (InputLayer)            (None, 1)            0                                            
+__________________________________________________________________________________________________
+param_2 (InputLayer)            (None, 1)            0                                            
+__________________________________________________________________________________________________
+param_3 (InputLayer)            (None, 1)            0                                            
+__________________________________________________________________________________________________
+image_top_1 (InputLayer)        (None, 1)            0                                            
+__________________________________________________________________________________________________
+price_p (InputLayer)            (None, 1)            0                                            
+__________________________________________________________________________________________________
+item_seq_number_cat (InputLayer (None, 1)            0                                            
+__________________________________________________________________________________________________
+embedding_1 (Embedding)         multiple             51943520    description[0][0]                
+                                                                 title[0][0]                      
+__________________________________________________________________________________________________
+embedding_8 (Embedding)         (None, 1, 80)        2240        region[0][0]                     
+__________________________________________________________________________________________________
+embedding_9 (Embedding)         (None, 1, 80)        140160      city[0][0]                       
+__________________________________________________________________________________________________
+embedding_6 (Embedding)         (None, 1, 80)        3760        category_name[0][0]              
+__________________________________________________________________________________________________
+embedding_7 (Embedding)         (None, 1, 80)        720         parent_category_name[0][0]       
+__________________________________________________________________________________________________
+embedding_2 (Embedding)         (None, 1, 80)        240         user_type[0][0]                  
+__________________________________________________________________________________________________
+embedding_3 (Embedding)         (None, 1, 80)        29760       param_1[0][0]                    
+__________________________________________________________________________________________________
+embedding_4 (Embedding)         (None, 1, 80)        22240       param_2[0][0]                    
+__________________________________________________________________________________________________
+embedding_5 (Embedding)         (None, 1, 80)        102160      param_3[0][0]                    
+__________________________________________________________________________________________________
+embedding_10 (Embedding)        (None, 1, 80)        245040      image_top_1[0][0]                
+__________________________________________________________________________________________________
+embedding_11 (Embedding)        (None, 1, 80)        6880        price_p[0][0]                    
+__________________________________________________________________________________________________
+embedding_12 (Embedding)        (None, 1, 80)        6960        item_seq_number_cat[0][0]        
+__________________________________________________________________________________________________
+output_des_max (GlobalMaxPoolin (None, 80)           0           embedding_1[0][0]                
+__________________________________________________________________________________________________
+output_title_max (GlobalMaxPool (None, 80)           0           embedding_1[1][0]                
+__________________________________________________________________________________________________
+flatten_9 (Flatten)             (None, 80)           0           embedding_8[0][0]                
+__________________________________________________________________________________________________
+flatten_10 (Flatten)            (None, 80)           0           embedding_9[0][0]                
+__________________________________________________________________________________________________
+flatten_11 (Flatten)            (None, 80)           0           embedding_6[0][0]                
+__________________________________________________________________________________________________
+flatten_12 (Flatten)            (None, 80)           0           embedding_7[0][0]                
+__________________________________________________________________________________________________
+flatten_13 (Flatten)            (None, 80)           0           embedding_2[0][0]                
+__________________________________________________________________________________________________
+flatten_14 (Flatten)            (None, 80)           0           embedding_3[0][0]                
+__________________________________________________________________________________________________
+flatten_15 (Flatten)            (None, 80)           0           embedding_4[0][0]                
+__________________________________________________________________________________________________
+flatten_16 (Flatten)            (None, 80)           0           embedding_5[0][0]                
+__________________________________________________________________________________________________
+flatten_17 (Flatten)            (None, 80)           0           embedding_10[0][0]               
+__________________________________________________________________________________________________
+flatten_18 (Flatten)            (None, 80)           0           embedding_11[0][0]               
+__________________________________________________________________________________________________
+flatten_19 (Flatten)            (None, 80)           0           embedding_12[0][0]               
+__________________________________________________________________________________________________
+price (InputLayer)              (None, 1)            0                                            
+__________________________________________________________________________________________________
+des_len (InputLayer)            (None, 1)            0                                            
+__________________________________________________________________________________________________
+des_nwords (InputLayer)         (None, 1)            0                                            
+__________________________________________________________________________________________________
+item_seq_number (InputLayer)    (None, 1)            0                                            
+__________________________________________________________________________________________________
+ridge_feature (InputLayer)      (None, 1)            0                                            
+__________________________________________________________________________________________________
+avg_days_up_user (InputLayer)   (None, 1)            0                                            
+__________________________________________________________________________________________________
+avg_times_up_user (InputLayer)  (None, 1)            0                                            
+__________________________________________________________________________________________________
+n_user_items (InputLayer)       (None, 1)            0                                            
+__________________________________________________________________________________________________
+population (InputLayer)         (None, 1)            0                                            
+__________________________________________________________________________________________________
+income (InputLayer)             (None, 1)            0                                            
+__________________________________________________________________________________________________
+whitenesses (InputLayer)        (None, 1)            0                                            
+__________________________________________________________________________________________________
+dullnesses (InputLayer)         (None, 1)            0                                            
+__________________________________________________________________________________________________
+blurinesses (InputLayer)        (None, 1)            0                                            
+__________________________________________________________________________________________________
+average_pixel_width (InputLayer (None, 1)            0                                            
+__________________________________________________________________________________________________
+average_reds (InputLayer)       (None, 1)            0                                            
+__________________________________________________________________________________________________
+average_greens (InputLayer)     (None, 1)            0                                            
+__________________________________________________________________________________________________
+average_blues (InputLayer)      (None, 1)            0                                            
+__________________________________________________________________________________________________
+param_1_deal_probability_avg (I (None, 1)            0                                            
+__________________________________________________________________________________________________
+category_name_deal_probability_ (None, 1)            0                                            
+__________________________________________________________________________________________________
+region_deal_probability_avg (In (None, 1)            0                                            
+__________________________________________________________________________________________________
+user_type_deal_probability_avg  (None, 1)            0                                            
+__________________________________________________________________________________________________
+price_p_deal_probability_avg (I (None, 1)            0                                            
+__________________________________________________________________________________________________
+item_seq_number_cat_deal_probab (None, 1)            0                                            
+__________________________________________________________________________________________________
+city_deal_probability_avg (Inpu (None, 1)            0                                            
+__________________________________________________________________________________________________
+parent_category_name_deal_proba (None, 1)            0                                            
+__________________________________________________________________________________________________
+des_len_log_deal_probability_av (None, 1)            0                                            
+__________________________________________________________________________________________________
+des_nwords_log_deal_probability (None, 1)            0                                            
+__________________________________________________________________________________________________
+concatenate_1 (Concatenate)     (None, 1067)         0           output_des_max[0][0]             
+                                                                 output_title_max[0][0]           
+                                                                 flatten_9[0][0]                  
+                                                                 flatten_10[0][0]                 
+                                                                 flatten_11[0][0]                 
+                                                                 flatten_12[0][0]                 
+                                                                 flatten_13[0][0]                 
+                                                                 flatten_14[0][0]                 
+                                                                 flatten_15[0][0]                 
+                                                                 flatten_16[0][0]                 
+                                                                 flatten_17[0][0]                 
+                                                                 flatten_18[0][0]                 
+                                                                 flatten_19[0][0]                 
+                                                                 price[0][0]                      
+                                                                 des_len[0][0]                    
+                                                                 des_nwords[0][0]                 
+                                                                 item_seq_number[0][0]            
+                                                                 ridge_feature[0][0]              
+                                                                 avg_days_up_user[0][0]           
+                                                                 avg_times_up_user[0][0]          
+                                                                 n_user_items[0][0]               
+                                                                 population[0][0]                 
+                                                                 income[0][0]                     
+                                                                 whitenesses[0][0]                
+                                                                 dullnesses[0][0]                 
+                                                                 blurinesses[0][0]                
+                                                                 average_pixel_width[0][0]        
+                                                                 average_reds[0][0]               
+                                                                 average_greens[0][0]             
+                                                                 average_blues[0][0]              
+                                                                 param_1_deal_probability_avg[0][0
+                                                                 category_name_deal_probability_av
+                                                                 region_deal_probability_avg[0][0]
+                                                                 user_type_deal_probability_avg[0]
+                                                                 price_p_deal_probability_avg[0][0
+                                                                 item_seq_number_cat_deal_probabil
+                                                                 city_deal_probability_avg[0][0]  
+                                                                 parent_category_name_deal_probabi
+                                                                 des_len_log_deal_probability_avg[
+                                                                 des_nwords_log_deal_probability_a
+__________________________________________________________________________________________________
+batch_normalization_1 (BatchNor (None, 1067)         4268        concatenate_1[0][0]              
+__________________________________________________________________________________________________
+dense_28 (Dense)                (None, 512)          546816      batch_normalization_1[0][0]      
+__________________________________________________________________________________________________
+activation_1 (Activation)       (None, 512)          0           dense_28[0][0]                   
+__________________________________________________________________________________________________
+dense_29 (Dense)                (None, 64)           32832       activation_1[0][0]               
+__________________________________________________________________________________________________
+activation_2 (Activation)       (None, 64)           0           dense_29[0][0]                   
+__________________________________________________________________________________________________
+dense_30 (Dense)                (None, 1)            65          activation_2[0][0]               
+==================================================================================================
+Total params: 53,087,661
+Trainable params: 53,085,527
+Non-trainable params: 2,134
+__________________________________________________________________________________________________
+None
+fname emb_all_80_itseqcat_price_p4_pr1_catn_rg_ut_p_ict_pc_dll_dnl_rgb_apw_5fold
+fold number: 0
+
+Epoch 00001: val_loss improved from inf to 0.04809, saving model to ../weights/emb_all_80_itseqcat_price_p4_pr1_catn_rg_ut_p_ict_pc_dll_dnl_rgb_apw_5fold_fold0.hdf5
+
+Epoch 00002: val_loss improved from 0.04809 to 0.04787, saving model to ../weights/emb_all_80_itseqcat_price_p4_pr1_catn_rg_ut_p_ict_pc_dll_dnl_rgb_apw_5fold_fold0.hdf5
+
+Epoch 00003: val_loss did not improve from 0.04787
+train_rmse 0.20326416885311008
+rmse: 0.21878411684166393
+fold number: 1
+
+Epoch 00001: val_loss improved from inf to 0.04831, saving model to ../weights/emb_all_80_itseqcat_price_p4_pr1_catn_rg_ut_p_ict_pc_dll_dnl_rgb_apw_5fold_fold1.hdf5
+
+Epoch 00002: val_loss improved from 0.04831 to 0.04796, saving model to ../weights/emb_all_80_itseqcat_price_p4_pr1_catn_rg_ut_p_ict_pc_dll_dnl_rgb_apw_5fold_fold1.hdf5
+
+Epoch 00003: val_loss did not improve from 0.04796
+train_rmse 0.20346524472386032
+rmse: 0.21899583762218544
+fold number: 2
+
+Epoch 00001: val_loss improved from inf to 0.04827, saving model to ../weights/emb_all_80_itseqcat_price_p4_pr1_catn_rg_ut_p_ict_pc_dll_dnl_rgb_apw_5fold_fold2.hdf5
+
+Epoch 00002: val_loss did not improve from 0.04827
+train_rmse 0.2135474123199646
+rmse: 0.21970480984277774
+fold number: 3
+
+Epoch 00001: val_loss improved from inf to 0.04858, saving model to ../weights/emb_all_80_itseqcat_price_p4_pr1_catn_rg_ut_p_ict_pc_dll_dnl_rgb_apw_5fold_fold3.hdf5
+
+Epoch 00002: val_loss improved from 0.04858 to 0.04791, saving model to ../weights/emb_all_80_itseqcat_price_p4_pr1_catn_rg_ut_p_ict_pc_dll_dnl_rgb_apw_5fold_fold3.hdf5
+
+Epoch 00003: val_loss did not improve from 0.04791
+train_rmse 0.2036548327729441
+rmse: 0.21888604981266815
+fold number: 4
+
+Epoch 00001: val_loss improved from inf to 0.04843, saving model to ../weights/emb_all_80_itseqcat_price_p4_pr1_catn_rg_ut_p_ict_pc_dll_dnl_rgb_apw_5fold_fold4.hdf5
+
+Epoch 00002: val_loss improved from 0.04843 to 0.04808, saving model to ../weights/emb_all_80_itseqcat_price_p4_pr1_catn_rg_ut_p_ict_pc_dll_dnl_rgb_apw_5fold_fold4.hdf5
+
+Epoch 00003: val_loss did not improve from 0.04808
+train_rmse 0.20362297824704198
+rmse: 0.21927437361556845
+rmse score avg: 0.21912903754697272
+storing test prediction
+storing test prediction
+storing oof prediction
