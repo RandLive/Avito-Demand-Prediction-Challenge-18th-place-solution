@@ -8,7 +8,7 @@ from joblib import Parallel, delayed
 
 class ImageGenerator(keras.utils.Sequence):
     'Generates data for Keras'
-    def __init__(self, dir_, item_ids, image_ids, labels, batch_size=64, dim=(160,160), n_channels=3, shuffle=True):
+    def __init__(self, dir_, item_ids, image_ids, labels, batch_size=32, dim=(160,160), n_channels=3, shuffle=True):
         'Initialization'
         self.dir = dir_
         self.dim = dim
@@ -52,7 +52,7 @@ class ImageGenerator(keras.utils.Sequence):
             fname = f'{self.dir}/{image_id}.jpg'
             img = cv2.imread(fname)
             
-            return cv2.resize(img, self.dim, interpolation = cv2.INTER_LINEAR)
+            return img
         except cv2.error as e:
             return np.zeros([*self.dim, self.n_channels])
         except:
@@ -76,7 +76,7 @@ class ImageGenerator(keras.utils.Sequence):
                 img = cv2.imread(fname)
             else: 
                 img = np.zeros([*self.dim, self.n_channels])
-            img = cv2.resize(img, self.dim, interpolation = cv2.INTER_CUBIC)
+#             img = cv2.resize(img, self.dim, interpolation = cv2.INTER_CUBIC)
             X[i,] = img
             y[i] = self.labels[item_id]
 #         parallel = Parallel(self.batch_size, backend="threading", verbose=0)

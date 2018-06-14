@@ -23,8 +23,8 @@ os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
 
-train_dir = '../input/train_jpg/data/competition_files/train_jpg/'
-test_dir = '../input/test_jpg/data/competition_files/test_jpg/'
+train_dir = '../input/train_jpg/data/competition_files/train_jpg_ds/'
+test_dir = '../input/test_jpg/data/competition_files/test_jpg_ds/'
 
 # restrict gpu usage
 config = tf.ConfigProto()
@@ -34,10 +34,10 @@ set_session(sess)
 
 def get_model():
     #Load the VGG model
-#     vgg_conv = VGG16(weights='imagenet', include_top=False, input_shape=(160,160, 3))
-    vgg_conv = ResNet50(weights='imagenet', include_top=False, input_shape=(160,160, 3))
+    vgg_conv = VGG16(weights='imagenet', include_top=False, input_shape=(160,160, 3))
+#     vgg_conv = ResNet50(weights='imagenet', include_top=False, input_shape=(160,160, 3))
     # Freeze the layers except the last 4 layers
-    for layer in vgg_conv.layers[:-4]:
+    for layer in vgg_conv.layers:
         layer.trainable = False
 
 
@@ -135,7 +135,7 @@ with open('../input/test_ridge.p', 'rb') as f:
     
 
     
-train = train.iloc[:10000]    
+# train = train.iloc[:10000]    
 nfolds=10
 fname='vgg_base'
 epochs= 30
