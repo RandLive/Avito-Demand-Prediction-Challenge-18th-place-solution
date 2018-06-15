@@ -563,17 +563,17 @@ def data_vectorize(df):
     "smooth_idf":False
     }
 
-#    tfidf_para2 = {
-#        "stop_words": russian_stop,
-#        "analyzer": "char",
-#        "token_pattern": r"\w{1,}",
-#        "sublinear_tf": True,
-#        "dtype": np.float32,
-#        "norm": "l2",
-#        # "min_df":5,
-#        # "max_df":.9,
-#        "smooth_idf": False
-#    }
+    tfidf_para2 = {
+        "stop_words": russian_stop,
+        "analyzer": "char",
+        "token_pattern": r"\w{1,}",
+        "sublinear_tf": True,
+        "dtype": np.float32,
+        "norm": "l2",
+        # "min_df":5,
+        # "max_df":.9,
+        "smooth_idf": False
+    }
 
     def get_col(col_name): return lambda x: x[col_name]
     vectorizer = FeatureUnion([
@@ -606,13 +606,13 @@ def data_vectorize(df):
             preprocessor=get_col("title"))
          ),
 
-#        ("title_char", TfidfVectorizer(
-#
-#            ngram_range=(1, 4),#(1, 4),(1,6)
-#            max_features=16000,#16000
-#            **tfidf_para2,
-#            preprocessor=get_col("title"))
-#         ),
+        ("title_char", TfidfVectorizer(
+
+            ngram_range=(1, 4),#(1, 4),(1,6)
+            max_features=16000,#16000
+            **tfidf_para2,
+            preprocessor=get_col("title"))
+         ),
     ])
     vectorizer.fit(df.to_dict("records"))
     ready_full_df = vectorizer.transform(df.to_dict("records"))    
@@ -855,7 +855,7 @@ def get_model(X_train):
 #              kernel_regularizer=regularizers.l2(0.001),
 #              activity_regularizer=regularizers.l1(0.001)                      
               )(sparse_data)   
-#    x = Dropout(0.1)(x)
+    x = Dropout(0.1)(x)
     x = PReLU()(x)
      
     # categorical layer
@@ -863,7 +863,7 @@ def get_model(X_train):
                       user_type, image_top_1, param_1, param_2, param_3, price_p, 
                       item_seq_number_p,
                       ] )
-#    x = Dropout(0.1)(x)
+    x = Dropout(0.1)(x)
     x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)
     x = PReLU()(x)
     
@@ -873,7 +873,7 @@ def get_model(X_train):
                       sgd_preds_1, sgd_preds_2, ridge_preds_1, ridge_preds_2, ridge_preds_1a, ridge_preds_2a, ridge_preds_3
                       ])   
     x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)
-#    x = Dropout(0.1)(x)        
+    x = Dropout(0.1)(x)        
     x = PReLU()(x)
        
     # numerical layer (image)
@@ -884,7 +884,7 @@ def get_model(X_train):
                       blurinesses, dullnesses, heights, image_quality, average_reds
                       ])   
     x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)
-#    x = Dropout(0.1)(x)        
+    x = Dropout(0.1)(x)        
     x = PReLU()(x)
       
     # numerical layer (text_count)
@@ -896,7 +896,7 @@ def get_model(X_train):
                       title_num_chars, title_num_words, title_num_unique_words, title_words_vs_unique
                       ])   
     x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)
-#    x = Dropout(0.1)(x)        
+    x = Dropout(0.1)(x)        
     x = PReLU()(x)
         
     # numerical layer (more ... )
@@ -905,7 +905,7 @@ def get_model(X_train):
                       n_user_items, population, price, wday
                       ])   
     x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)
-#    x = Dropout(0.1)(x)        
+    x = Dropout(0.1)(x)        
     x = PReLU()(x)
     
     # numerical layer (more on text ...)
@@ -919,7 +919,7 @@ def get_model(X_train):
                       num_desc_Exclamation, num_desc_Question
                       ])   
     x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)
-#    x = Dropout(0.1)(x)        
+    x = Dropout(0.1)(x)        
     x = PReLU()(x)
        
     # output layer    
