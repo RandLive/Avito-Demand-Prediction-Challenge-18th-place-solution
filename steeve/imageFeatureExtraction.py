@@ -13,7 +13,7 @@ from keras.applications.resnet50 import ResNet50
 from keras.backend.tensorflow_backend import set_session
 import matplotlib.pyplot as plt
 import pickle
-
+from ImageGenerator import *
 # In[2]:
 
 
@@ -63,77 +63,106 @@ model = Xception(include_top=True, weights='imagenet')
 from keras.preprocessing import image
 
 from tqdm import tqdm
-image_dir = '../input/test_jpg/data/competition_files/test_jpg/'
+# image_dir = '../input/test_jpg/data/competition_files/test_jpg/'
 
-print('getting img names')
-# In[5]:
+# print('getting img names')
+# # In[5]:
 
 
-img_names = [i for i in os.walk(image_dir)][0][2]
-print(f'size of images: {len(img_names)}')
+# img_names = [i for i in os.walk(image_dir)][0][2]
+# print(f'size of images: {len(img_names)}')
 
-features = []
-ids = []
-for img_name in tqdm(img_names):
+# features = []
+# ids = []
+# for img_name in tqdm(img_names):
     
-    img_path = image_dir + img_name
-    try:
-        img = image.load_img(img_path, target_size=(224, 224))
-    except OSError:
-        continue
-    x = image.img_to_array(img)
-    x = np.expand_dims(x, axis=0)  # 4 dims(1, 3, 299, 299)
-    x = preprocess_input(x)
+#     img_path = image_dir + img_name
+#     try:
+#         img = image.load_img(img_path, target_size=(224, 224))
+#     except OSError:
+#         continue
+#     x = image.img_to_array(img)
+#     x = np.expand_dims(x, axis=0)  # 4 dims(1, 3, 299, 299)
+#     x = preprocess_input(x)
     
-    feature = model.predict(x)
-#     print(feature.shape)
-    id_ = img_name[:-4]
-    features.append(feature)
-    ids.append(id_)
-    # print(feature.shape)
+#     feature = model.predict(x)
+# #     print(feature.shape)
+#     id_ = img_name[:-4]
+#     features.append(feature)
+#     ids.append(id_)
+#     # print(feature.shape)
 
 
-x = {}
-x['features'] = features
-x['ids'] = ids
-with open('../input/xeption_features_test.p','wb') as f:
-    pickle.dump(x, f)  
+# x = {}
+# x['features'] = features
+# x['ids'] = ids
+# with open('../input/xeption_features_test.p','wb') as f:
+#     pickle.dump(x, f)  
     
 
-del x
-del features
-del ids
-del img_names
-import gc
-gc.collect()
+# del x
+# del features
+# del ids
+# del img_names
+# import gc
+# gc.collect()
+
+# import pickle
+with open('../input/train_ridge.p', 'rb') as f:
+    x_train = pickle.load(f)
+import pandas as pd
+
+# x_train = pd.read_csv('../input/train.csv')
+    
+# with open('../input/test_ridge.p', 'rb') as f:
+#     test = pickle.load(f)   
+    
 
 image_dir = '../input/train_jpg/data/competition_files/train_jpg/'
 
+
+x_train.set_index('item_id', inplace=True)
+ 
+
+train_item_ids = x_train.index
+
+
+train_image_ids = x_train.image
+
+
+train_labels = x_train.deal_probability
+
+
+#         print(val_labels)
+train_gen = ImageGenerator(image_dir, train_item_ids, train_image_ids, train_labels, dim=(224,224), shuffle=False)
+
+features = model.predict_generator(train_gen, verbose=1)
+ids = train_image_ids
 print('getting img names')
 # In[5]:
 
 
-img_names = [i for i in os.walk(image_dir)][0][2]
-print(f'size of images: {len(img_names)}')
+# img_names = [i for i in os.walk(image_dir)][0][2]
+# print(f'size of images: {len(img_names)}')
 
-features = []
-ids = []
-for img_name in tqdm(img_names):
+# features = []
+# ids = []
+# for img_name in tqdm(img_names):
     
-    img_path = image_dir + img_name
-    try:
-        img = image.load_img(img_path, target_size=(224, 224))
-    except OSError:
-        continue
-    x = image.img_to_array(img)
-    x = np.expand_dims(x, axis=0)  # 4 dims(1, 3, 299, 299)
-    x = preprocess_input(x)
+#     img_path = image_dir + img_name
+#     try:
+#         img = image.load_img(img_path, target_size=(224, 224))
+#     except OSError:
+#         continue
+#     x = image.img_to_array(img)
+#     x = np.expand_dims(x, axis=0)  # 4 dims(1, 3, 299, 299)
+#     x = preprocess_input(x)
     
-    feature = model.predict(x)
-#     print(feature.shape)
-    id_ = img_name[:-4]
-    features.append(feature)
-    ids.append(id_)
+#     feature = model.predict(x)
+# #     print(feature.shape)
+#     id_ = img_name[:-4]
+#     features.append(feature)
+#     ids.append(id_)
     # print(feature.shape)
 
 
