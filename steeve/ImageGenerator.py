@@ -8,7 +8,7 @@ from joblib import Parallel, delayed
 
 class ImageGenerator(keras.utils.Sequence):
     'Generates data for Keras'
-    def __init__(self, dir_, item_ids, image_ids, labels, batch_size=32, dim=(160,160), n_channels=3, shuffle=True):
+    def __init__(self, dir_, item_ids, image_ids, labels, batch_size=32, dim=(160,160), n_channels=3, shuffle=True, is_train=True):
         'Initialization'
         self.dir = dir_
         self.dim = dim
@@ -21,23 +21,31 @@ class ImageGenerator(keras.utils.Sequence):
         self.n_channels = n_channels
         self.shuffle = shuffle
         self.on_epoch_end()
+        self.is_train = is_train
         
 
     def __len__(self):
         'Denotes the number of batches per epoch'
-        return int(np.floor(len(self.item_ids) / self.batch_size))
+        return int(np.ceil(len(self.item_ids) / self.batch_size))
 
     def __getitem__(self, index):
         'Generate one batch of data'
         # Generate indexes of the batch
-        indexes = self.indexes[index*self.batch_size:(index+1)*self.batch_size]
-
+        if (index+1)*self.batch_size > len(self.item_ids):
+#             print('exceed')
+            indexes = self.indexes[index*self.batch_size:]
+#             print(indexes.shape)
+        else:
+            indexes = self.indexes[index*self.batch_size:(index+1)*self.batch_size]
+#         print(f'index : {len(indexes)}')
         # Find list of IDs
         item_ids_temp = [self.item_ids[k] for k in indexes]
-
         # Generate data
+#         print(f'item {len(item_ids_temp)}')
         X, y = self.__data_generation(item_ids_temp)
 
+        if not self.is_train:
+            return X
         return X, y
 
     def on_epoch_end(self):
@@ -63,8 +71,8 @@ class ImageGenerator(keras.utils.Sequence):
     def __data_generation(self, item_ids_temp):
         'Generates data containing batch_size samples' # X : (n_samples, *dim, n_channels)
         # Initialization
-        X = np.empty((self.batch_size, *self.dim, self.n_channels))
-        y = np.empty((self.batch_size), dtype=np.float32)
+        X = np.empty((len(item_ids_temp), *self.dim, self.n_channels))
+        y = np.empty(len(item_ids_temp) , dtype=np.float32)
 
         # Generate data
         for i, item_id in enumerate(item_ids_temp):
@@ -78,7 +86,8 @@ class ImageGenerator(keras.utils.Sequence):
                 img = np.zeros([*self.dim, self.n_channels])
             img = cv2.resize(img, self.dim, interpolation = cv2.INTER_LINEAR)
             X[i,] = img
-            y[i] = self.labels[item_id]
+            if self.is_train:
+                y[i] = self.labels[item_id]
 #         parallel = Parallel(self.batch_size, backend="threading", verbose=0)
 #         X = parallel(delayed(self._load_image)(item_id) for item_id in item_ids_temp)
 #         y = parallel(delayed(self._get_label)(item_id) for item_id in item_ids_temp)
