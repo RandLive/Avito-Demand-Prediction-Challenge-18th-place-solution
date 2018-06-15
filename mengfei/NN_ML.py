@@ -53,7 +53,7 @@ if debug == False:
     test_periods = pd.read_csv("../input/periods_test.csv", parse_dates=["date_from", "date_to"])
 else:
     train_df = pd.read_csv("../input/train.csv", parse_dates = ["activation_date"])
-    train_df = shuffle(train_df, random_state=1234); train_df = train_df.iloc[:100000]
+    train_df = shuffle(train_df, random_state=1234); train_df = train_df.iloc[:10000]
     y = train_df["deal_probability"]
     test_df = pd.read_csv("../input/test.csv",  nrows=1000, parse_dates = ["activation_date"])
     
@@ -852,10 +852,10 @@ def get_model(X_train):
     # sparse matrix layer                               
     x = Dense(128 , input_dim=128,
               kernel_initializer=he_uniform(seed=0),
-              kernel_regularizer=regularizers.l2(0.001),
-              activity_regularizer=regularizers.l1(0.001)                      
+#              kernel_regularizer=regularizers.l2(0.001),
+#              activity_regularizer=regularizers.l1(0.001)                      
               )(sparse_data)   
-    x = Dropout(0.3)(x)
+#    x = Dropout(0.1)(x)
     x = PReLU()(x)
      
     # categorical layer
@@ -863,10 +863,9 @@ def get_model(X_train):
                       user_type, image_top_1, param_1, param_2, param_3, price_p, 
                       item_seq_number_p,
                       ] )
-    x = Dropout(0.3)(x)
+#    x = Dropout(0.1)(x)
     x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)
     x = PReLU()(x)
-        
     
     # numerical layer 
     x = concatenate( [x,
@@ -874,10 +873,9 @@ def get_model(X_train):
                       sgd_preds_1, sgd_preds_2, ridge_preds_1, ridge_preds_2, ridge_preds_1a, ridge_preds_2a, ridge_preds_3
                       ])   
     x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)
-    x = Dropout(0.3)(x)        
+#    x = Dropout(0.1)(x)        
     x = PReLU()(x)
-    
-    
+       
     # numerical layer (image)
     x = concatenate( [x,
                       average_HLS_Hs,average_HLS_Ls,average_HLS_Ss, average_HSV_Ss, average_HSV_Vs,
@@ -886,10 +884,9 @@ def get_model(X_train):
                       blurinesses, dullnesses, heights, image_quality, average_reds
                       ])   
     x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)
-    x = Dropout(0.3)(x)        
+#    x = Dropout(0.1)(x)        
     x = PReLU()(x)
-    
-    
+      
     # numerical layer (text_count)
     x = concatenate( [x,
                       text_feature_num_chars, text_feature_num_words, text_feature_num_unique_words,
@@ -899,17 +896,16 @@ def get_model(X_train):
                       title_num_chars, title_num_words, title_num_unique_words, title_words_vs_unique
                       ])   
     x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)
-    x = Dropout(0.3)(x)        
+#    x = Dropout(0.1)(x)        
     x = PReLU()(x)
-    
-    
+        
     # numerical layer (more ... )
     x = concatenate( [x,
                       avg_days_up_user, avg_times_up_user, income,
                       n_user_items, population, price, wday
                       ])   
     x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)
-    x = Dropout(0.3)(x)        
+#    x = Dropout(0.1)(x)        
     x = PReLU()(x)
     
     # numerical layer (more on text ...)
@@ -923,7 +919,7 @@ def get_model(X_train):
                       num_desc_Exclamation, num_desc_Question
                       ])   
     x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)
-    x = Dropout(0.3)(x)        
+#    x = Dropout(0.1)(x)        
     x = PReLU()(x)
        
     # output layer    
@@ -985,7 +981,7 @@ for train_index, valid_index in kf2.split(y):
       print('file name is:', file_path)
       
       
-      checkpoint = ModelCheckpoint(file_path, monitor='val_loss', verbose=2, save_best_only=False, mode='min')
+      checkpoint = ModelCheckpoint(file_path, monitor='val_loss', verbose=2, save_best_only=True, mode='min')
       early = EarlyStopping(monitor='val_loss', mode='min', patience=5)
       lr_reduced = ReduceLROnPlateau(monitor='val_loss',
                                      factor=0.1,
@@ -1284,7 +1280,7 @@ for train_index, valid_index in kf2.split(y):
             model.summary()
                         
             BATCH_SIZE = 128
-            epochs = 10
+            epochs = 15
             
             hist = model.fit(X_train, y_train, epochs=epochs, batch_size=BATCH_SIZE, 
                              validation_data=(X_valid, y_valid), verbose=1, 
