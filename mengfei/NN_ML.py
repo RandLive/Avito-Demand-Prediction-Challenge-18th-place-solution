@@ -53,7 +53,7 @@ if debug == False:
     test_periods = pd.read_csv("../input/periods_test.csv", parse_dates=["date_from", "date_to"])
 else:
     train_df = pd.read_csv("../input/train.csv", parse_dates = ["activation_date"])
-    train_df = shuffle(train_df, random_state=1234); train_df = train_df.iloc[:10000]
+    train_df = shuffle(train_df, random_state=1234); train_df = train_df.iloc[:100000]
     y = train_df["deal_probability"]
     test_df = pd.read_csv("../input/test.csv",  nrows=1000, parse_dates = ["activation_date"])
     
@@ -748,10 +748,6 @@ full_df.drop("user_id", axis=1, inplace=True)
 gc.collect()
 
 
-
-
-
-
 def root_mean_squared_error(y_true, y_pred):
         return K.sqrt(K.mean(K.square(y_pred - y_true), axis=-1)) 
 
@@ -962,6 +958,7 @@ def get_model(X_train):
                       num_desc_Exclamation, num_desc_Question                                         
                       ], x)
       
+
     # optimizer = Adam(.0011)
     model.compile(loss=root_mean_squared_error, optimizer="rmsprop")
     return model
@@ -1237,7 +1234,8 @@ for train_index, valid_index in kf2.split(y):
                   'population': np.array(df['population']),
                   'price': np.array(df['price']),
                   'wday': np.array(df['wday']),
-                                    
+  
+                                  
                   'num_desc_punct': np.array(df['num_desc_punct']),
                   'num_desc_capE': np.array(df['num_desc_capE']),
                   'num_desc_capP': np.array(df['num_desc_capP']),
