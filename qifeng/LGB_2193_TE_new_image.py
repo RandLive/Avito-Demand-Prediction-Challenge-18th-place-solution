@@ -432,11 +432,12 @@ test_df = test_df.merge(gp, on="user_id", how="left")
 
 #TODO
 print('adding weekdays on shelf per image_top_1..')
-train_df = train_df.merge(train_periods[['item_id', 'date_from', 'date_to']], on='item_id', how='outer')
-test_df = test_df.merge(test_periods[['item_id', 'date_from', 'date_to']], on='item_id', how='outer')
+train_df = train_df.merge(train_periods[['item_id', 'date_from', 'date_to']], on='item_id', how='left')
+test_df = test_df.merge(test_periods[['item_id', 'date_from', 'date_to']], on='item_id', how='left')
 
 train_df["date_from"].fillna(value=pd.to_datetime('1/1/2015'),inplace=True)
 train_df["date_to"].fillna(train_df['date_from'],inplace=True)
+
 test_df["date_from"].fillna(value=pd.to_datetime('1/1/2015'),inplace=True)
 test_df["date_to"].fillna(train_df['date_from'],inplace=True)
 
@@ -598,11 +599,11 @@ for col in agg_cols:
     test_df[col].fillna(-1, inplace=True)
 
 print("merging supplimentary data done!")
-
-
-# =============================================================================
-# done! go to the normal steps
-# =============================================================================
+#
+#
+## =============================================================================
+## done! go to the normal steps
+## =============================================================================
 def rmse(predictions, targets):
     print("calculating RMSE ...")
     return np.sqrt(((predictions - targets) ** 2).mean())
@@ -1006,23 +1007,23 @@ for train_index, valid_index in kf2.split(y):
             kf = KFold(len_train, n_folds=NFOLDS, shuffle=True, random_state=SEED)
 
             # SGD
-#            from sklearn.linear_model import SGDRegressor
-#            sgdregressor_params = {'alpha':0.0001, 'random_state':SEED, 'tol':1e-3}
-#            sgd = SklearnWrapper(clf=SGDRegressor, seed = SEED, params = sgdregressor_params)
-#            FULL_DF = pd.DataFrame(full_df)
-#            FULL_DF.drop(["item_id"], axis=1, inplace=True)
-#            tmp1 = pd.DataFrame(full_df)
-#            tmp1.drop(["item_id"], axis=1, inplace=True)
-#            print('sgd 1 oof ...')
-#            sgd_oof_train, sgd_oof_test = get_oof(sgd, np.array(FULL_DF)[:len_train], y, np.array(FULL_DF)[len_train:])
-#            sgd_preds = np.concatenate([sgd_oof_train, sgd_oof_test])
-#            tmp1['sgd_preds_1'] = sgd_preds.astype(np.float32)
-#            tmp1['sgd_preds_1'].clip(0.0, 1.0, inplace=True)
-#            print('sgd 2 oof ...')
-#            sgd_oof_train, sgd_oof_test = get_oof(sgd, ready_df[:len_train], y, ready_df[len_train:])
-#            sgd_preds = np.concatenate([sgd_oof_train, sgd_oof_test])
-#            tmp1['sgd_preds_2'] = sgd_preds.astype(np.float32)
-#            tmp1['sgd_preds_2'].clip(0.0, 1.0, inplace=True)
+            from sklearn.linear_model import SGDRegressor
+            sgdregressor_params = {'alpha':0.0001, 'random_state':SEED, 'tol':1e-3}
+            sgd = SklearnWrapper(clf=SGDRegressor, seed = SEED, params = sgdregressor_params)
+            FULL_DF = pd.DataFrame(full_df)
+            FULL_DF.drop(["item_id"], axis=1, inplace=True)
+            tmp1 = pd.DataFrame(full_df)
+            tmp1.drop(["item_id"], axis=1, inplace=True)
+            print('sgd 1 oof ...')
+            sgd_oof_train, sgd_oof_test = get_oof(sgd, np.array(FULL_DF)[:len_train], y, np.array(FULL_DF)[len_train:])
+            sgd_preds = np.concatenate([sgd_oof_train, sgd_oof_test])
+            tmp1['sgd_preds_1'] = sgd_preds.astype(np.float32)
+            tmp1['sgd_preds_1'].clip(0.0, 1.0, inplace=True)
+            print('sgd 2 oof ...')
+            sgd_oof_train, sgd_oof_test = get_oof(sgd, ready_df[:len_train], y, ready_df[len_train:])
+            sgd_preds = np.concatenate([sgd_oof_train, sgd_oof_test])
+            tmp1['sgd_preds_2'] = sgd_preds.astype(np.float32)
+            tmp1['sgd_preds_2'].clip(0.0, 1.0, inplace=True)
 
             # Ridge
             #'alpha':20.0
