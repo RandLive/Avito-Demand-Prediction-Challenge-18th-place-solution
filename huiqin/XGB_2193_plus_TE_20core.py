@@ -739,7 +739,7 @@ numLimit = 5
 tmp = pd.DataFrame(full_df)
 full_df_COPY = pd.DataFrame(tmp)
 del tmp
-
+pred_vals=np.zeros(y.shape)
 for train_index, valid_index in kf2.split(y):
       numIter +=1
       print("training in fold " + str(numIter))
@@ -966,7 +966,7 @@ for train_index, valid_index in kf2.split(y):
 
 print("mean rmse is:", rmse_sume/numLimit)      
 print("Features importance...")
-xgb.plot_importance(model)
+# xgb.plot_importance(model)
 # gain = bst.feature_importance("gain")
 # ft = pd.DataFrame({"feature":bst.feature_name(), "split":bst.feature_importance("split"), "gain":100 * gain / gain.sum()}).sort_values("gain", ascending=False)
 # print(ft.head(50))
@@ -974,5 +974,16 @@ xgb.plot_importance(model)
 #plt.figure()
 #ft[["feature","gain"]].head(50).plot(kind="barh", x="feature", y="gain", legend=False, figsize=(10, 20))
 #plt.gcf().savefig("features_importance.png")
+train_data = pd.read_csv('../input/train.csv')
+label = ['deal_probability']
+train_user_ids = train_data.user_id.values
+train_item_ids = train_data.item_id.values
 
+train_item_ids = train_item_ids.reshape(len(train_item_ids), 1)
+train_user_ids = train_item_ids.reshape(len(train_user_ids), 1)
+
+val_predicts = pd.DataFrame(data=pred_vals, columns= label)
+val_predicts['user_id'] = train_user_ids
+val_predicts['item_id'] = train_item_ids
+val_predicts.to_csv('ml_xgb_5fold_train_oof.csv', index=False)
 print("All Done.")
