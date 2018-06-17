@@ -56,7 +56,7 @@ if debug == False:
     test_periods = pd.read_csv("../input/periods_test.csv", parse_dates=["date_from", "date_to"])
 else:
     train_df = pd.read_csv("../input/train.csv", parse_dates = ["activation_date"])
-    train_df = shuffle(train_df, random_state=1234); train_df = train_df.iloc[:200000]
+    train_df = shuffle(train_df, random_state=1234); train_df = train_df.iloc[:10000]
     y = train_df["deal_probability"]
     test_df = pd.read_csv("../input/test.csv",  nrows=1000, parse_dates = ["activation_date"])
     
@@ -897,16 +897,18 @@ def get_model(X_train):
   
     # sparse matrix layer
     # mean valid rmse:  0.2503963423301487                            
-    x = Dense(256, input_dim=1024,
+    x1 = Dense(512, input_dim=512,
               kernel_initializer=he_uniform(seed=0),
 #              kernel_regularizer=regularizers.l2(0.001),
 #              activity_regularizer=regularizers.l1(0.001)                      
-              )(sparse_data)   
-    x = GaussianDropout(0.25)(x)
-#     x = SpatialDropout1D(0.3)(x)
-    x = PReLU()(x)
+              )(sparse_data)  
+    x1 = BatchNormalization()(x1) 
+    x1 = GaussianDropout(0.2)(x1)
+    x1 = PReLU()(x1)
 
-    x = concatenate( [x, 
+
+    # categorical layer
+    x2 = concatenate( [
                       Flatten() (emb_region), 
                       Flatten() (emb_city), 
                       Flatten() (emb_category_name), 
@@ -919,63 +921,50 @@ def get_model(X_train):
                       Flatten() (emb_price_p),
                       Flatten() (emb_item_seq_number_p),
                       ])
-#    x = GaussianDropout(0.3)(x)
-#    x = BatchNormalization()(x)
-#    x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)
-#    x = PReLU()(x)
     
-    # categorical layer
-    x = concatenate( [x, region, city, parent_category_name, category_name,
+    
+    x2 = concatenate( [x2, region, city, parent_category_name, category_name,
                       user_type, image_top_1, param_1, param_2, param_3, price_p, 
                       item_seq_number_p,
                       ] )
-#    x = Dropout(0.05)(x)
-#    x = Dense(128, kernel_initializer=he_uniform(seed=0))(x)
-#    x = PReLU()(x)
+      
+    x2 = Dropout(0.05)(x2)
+    x2 = Dense(128, kernel_initializer=he_uniform(seed=0))(x2)
+    x2 = PReLU()(x2)
+    x2 = Dropout(0.05)(x2)
+    x2 = Dense(128, kernel_initializer=he_uniform(seed=0))(x2)
+    x2 = PReLU()(x2)
+
        
     # numerical layer 
-    x = concatenate( [x,
+    x3  = concatenate([
                       median_deal_probability_price_p, median_deal_probability_param_2, median_deal_probability_item_seq_number_p,
                       sgd_preds_1, sgd_preds_2, ridge_preds_1, ridge_preds_2, ridge_preds_1a, ridge_preds_2a, ridge_preds_3
                       ])
-#    x = Dropout(0.05)(x) 
-    x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)           
-    x = PReLU()(x)
-       
-    # numerical layer (image)
-    x = concatenate( [x,
-                      average_HLS_Hs,average_HLS_Ls,average_HLS_Ss, average_HSV_Ss, average_HSV_Vs,
-                      average_LUV_Ls, average_LUV_Us, average_LUV_Vs, average_YUV_Us, 
-                      average_YUV_Vs, average_YUV_Ys, average_blues, average_greens, average_pixel_width, 
-                      blurinesses, dullnesses, heights, image_quality, average_reds
-                      ])  
-#    x = Dropout(0.05)(x)        
-#    x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)      
-#    x = PReLU()(x)
+      
+    x3  = concatenate( [x3 ,
+                      avg_days_up_user, avg_times_up_user, income,
+                      n_user_items, population, price, wday
+                      ])
+             
+    x3 = Dropout(0.05)(x3)        
+    x3 = Dense(128 , kernel_initializer=he_uniform(seed=0))(x3)      
+    x3 = PReLU()(x3)
+    x3 = Dropout(0.05)(x3)        
+    x3 = Dense(128 , kernel_initializer=he_uniform(seed=0))(x3)      
+    x3 = PReLU()(x3)
+
       
     # numerical layer (text_count)
-    x = concatenate( [x,
+    x4 = concatenate( [
                       text_feature_num_chars, text_feature_num_words, text_feature_num_unique_words,
                       text_feature_words_vs_unique, text_feature_2_num_chars, text_feature_2_num_words, 
                       text_feature_2_num_unique_words, text_feature_2_words_vs_unique, description_num_chars, 
                       description_num_words, description_num_unique_words, description_words_vs_unique, 
                       title_num_chars, title_num_words, title_num_unique_words, title_words_vs_unique
                       ])
-#    x = Dropout(0.05)(x)        
-#    x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)      
-#    x = PReLU()(x)
-        
-    # numerical layer (more ... )
-    x = concatenate( [x,
-                      avg_days_up_user, avg_times_up_user, income,
-                      n_user_items, population, price, wday
-                      ])
-#    x = Dropout(0.05)(x)       
-    x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)       
-    x = PReLU()(x)
-    
-    # numerical layer (more on text ...)
-    x = concatenate( [x,
+     
+    x4 = concatenate( [x4,
                       num_desc_punct, num_desc_capE, num_desc_capP,
                       num_title_punct, num_title_capE, num_title_capP, 
                       is_in_desc_1, is_in_desc_2, is_in_desc_3, 
@@ -984,37 +973,73 @@ def get_model(X_train):
                       is_in_desc_10, num_title_Exclamation, num_title_Question, 
                       num_desc_Exclamation, num_desc_Question
                       ])
-#    x = Dropout(0.05)(x)      
+
+    x4 = Dropout(0.05)(x4)        
+    x4 = Dense(128 , kernel_initializer=he_uniform(seed=0))(x4)      
+    x4 = PReLU()(x4)
+    x4 = Dropout(0.05)(x4)        
+    x4 = Dense(128 , kernel_initializer=he_uniform(seed=0))(x4)      
+    x4 = PReLU()(x4)
+    
+
+      
+    # image layer
+    x5  = concatenate( [
+                      average_HLS_Hs,average_HLS_Ls,average_HLS_Ss, average_HSV_Ss, average_HSV_Vs,
+                      average_LUV_Ls, average_LUV_Us, average_LUV_Vs, average_YUV_Us, 
+                      average_YUV_Vs, average_YUV_Ys, average_blues, average_greens, average_pixel_width, 
+                      blurinesses, dullnesses, heights, image_quality, average_reds
+                      ])
+
+    x5 = Dropout(0.05)(x5)        
+    x5 = Dense(128 , kernel_initializer=he_uniform(seed=0))(x5)      
+    x5 = PReLU()(x5)
+    x5 = Dropout(0.05)(x5)        
+    x5 = Dense(128 , kernel_initializer=he_uniform(seed=0))(x5)      
+    x5 = PReLU()(x5)
+    x5 = Dropout(0.05)(x5)        
+    x5 = Dense(128 , kernel_initializer=he_uniform(seed=0))(x5)      
+    x5 = PReLU()(x5)
+      
+    x = concatenate([x1,
+                     x2,
+                     x3,
+                     x4,
+                     x5
+                     ])
+    
+   
+    x = Dropout(0.1)(x)      
+    x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)       
+    x = PReLU()(x)
+#    
+    x = Dropout(0.1)(x)      
     x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)       
     x = PReLU()(x)
     
-#    x = Dropout(0.1)(x)      
+    x = Dropout(0.1)(x)      
     x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)       
     x = PReLU()(x)
     
-#    x = Dropout(0.1)(x)      
+    x = Dropout(0.1)(x)      
     x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)       
     x = PReLU()(x)
     
-#    x = Dropout(0.1)(x)      
-    x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)       
-    x = PReLU()(x)
-    
-    #    x = Dropout(0.1)(x)      
+    x = Dropout(0.1)(x)      
     x = Dense(64 , kernel_initializer=he_uniform(seed=0))(x)       
     x = PReLU()(x)
-
-    #    x = Dropout(0.1)(x)      
+    
+    x = Dropout(0.1)(x)      
     x = Dense(32 , kernel_initializer=he_uniform(seed=0))(x)       
     x = PReLU()(x)
     
-    #    x = Dropout(0.1)(x)      
+    x = Dropout(0.1)(x)      
     x = Dense(16 , kernel_initializer=he_uniform(seed=0))(x)       
     x = PReLU()(x)
        
     # output layer    
     x = Dense(1)(x)
-    
+   
     model = Model([sparse_data, region, city, parent_category_name, category_name,
                       user_type, image_top_1, param_1, param_2, param_3, price_p, 
                       item_seq_number_p,
