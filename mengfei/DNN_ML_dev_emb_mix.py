@@ -56,7 +56,7 @@ if debug == False:
     test_periods = pd.read_csv("../input/periods_test.csv", parse_dates=["date_from", "date_to"])
 else:
     train_df = pd.read_csv("../input/train.csv", parse_dates = ["activation_date"])
-    train_df = shuffle(train_df, random_state=1234); train_df = train_df.iloc[:100000]
+    train_df = shuffle(train_df, random_state=1234); train_df = train_df.iloc[:10000]
     y = train_df["deal_probability"]
     test_df = pd.read_csv("../input/test.csv",  nrows=1000, parse_dates = ["activation_date"])
     
@@ -897,7 +897,7 @@ def get_model(X_train):
   
     # sparse matrix layer
     # mean valid rmse:  0.2503963423301487                            
-    x1 = Dense(128, input_dim=256,
+    x1 = Dense(128, input_dim=16,
               kernel_initializer=he_uniform(seed=0),
 #              kernel_regularizer=regularizers.l2(0.001),
 #              activity_regularizer=regularizers.l1(0.001)                      
@@ -1090,7 +1090,7 @@ for train_index, valid_index in kf2.split(y):
                                      factor=0.05,
                                      patience=2,
                                      verbose=2,
-                                     epsilon=5e-5,
+                                     epsilon=1e-6,
                                      mode='min')
       
       callbacks_list = [checkpoint, early, lr_reduced]
@@ -1387,7 +1387,7 @@ for train_index, valid_index in kf2.split(y):
             
             hist = model.fit(X_train, y_train, epochs=epochs, batch_size=BATCH_SIZE, 
                              validation_data=(X_valid, y_valid), verbose=2,
-                             shuffle=False, callbacks=callbacks_list)#shuffle=False,
+                             shuffle=True, callbacks=callbacks_list)#shuffle=False,
             
             model.load_weights(file_path)
             pred_test = model.predict(X_test, batch_size=4000)
@@ -1419,6 +1419,6 @@ val_predicts['item_id'] = train_item_ids
 val_predicts.to_csv('ml_nn_oof.csv', index=False)
 '''
 1w 5 folds
-#mean train rmse:  0.23350688575361983
-#mean valid rmse:  0.24647966724067033
+mean train rmse:  0.2235833981951847
+mean valid rmse:  0.2449133247220292
 '''
