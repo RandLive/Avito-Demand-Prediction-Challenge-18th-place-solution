@@ -56,7 +56,7 @@ if debug == False:
     test_periods = pd.read_csv("../input/periods_test.csv", parse_dates=["date_from", "date_to"])
 else:
     train_df = pd.read_csv("../input/train.csv", parse_dates = ["activation_date"])
-    train_df = shuffle(train_df, random_state=1234); train_df = train_df.iloc[:10000]
+    train_df = shuffle(train_df, random_state=1234); train_df = train_df.iloc[:100000]
     y = train_df["deal_probability"]
     test_df = pd.read_csv("../input/test.csv",  nrows=1000, parse_dates = ["activation_date"])
     
@@ -897,13 +897,13 @@ def get_model(X_train):
   
     # sparse matrix layer
     # mean valid rmse:  0.2503963423301487                            
-    x1 = Dense(512, input_dim=512,
+    x1 = Dense(128, input_dim=256,
               kernel_initializer=he_uniform(seed=0),
 #              kernel_regularizer=regularizers.l2(0.001),
 #              activity_regularizer=regularizers.l1(0.001)                      
               )(sparse_data)  
     x1 = BatchNormalization()(x1) 
-    x1 = GaussianDropout(0.2)(x1)
+    x1 = GaussianDropout(0.25)(x1)
     x1 = PReLU()(x1)
 
 
@@ -922,7 +922,6 @@ def get_model(X_train):
                       Flatten() (emb_item_seq_number_p),
                       ])
     
-    
     x2 = concatenate( [x2, region, city, parent_category_name, category_name,
                       user_type, image_top_1, param_1, param_2, param_3, price_p, 
                       item_seq_number_p,
@@ -931,10 +930,9 @@ def get_model(X_train):
     x2 = Dropout(0.05)(x2)
     x2 = Dense(128, kernel_initializer=he_uniform(seed=0))(x2)
     x2 = PReLU()(x2)
-    x2 = Dropout(0.05)(x2)
-    x2 = Dense(128, kernel_initializer=he_uniform(seed=0))(x2)
-    x2 = PReLU()(x2)
-
+#    x2 = Dropout(0.05)(x2)
+#    x2 = Dense(128, kernel_initializer=he_uniform(seed=0))(x2)
+#    x2 = PReLU()(x2)
        
     # numerical layer 
     x3  = concatenate([
@@ -947,9 +945,6 @@ def get_model(X_train):
                       n_user_items, population, price, wday
                       ])
              
-    x3 = Dropout(0.05)(x3)        
-    x3 = Dense(128 , kernel_initializer=he_uniform(seed=0))(x3)      
-    x3 = PReLU()(x3)
     x3 = Dropout(0.05)(x3)        
     x3 = Dense(128 , kernel_initializer=he_uniform(seed=0))(x3)      
     x3 = PReLU()(x3)
@@ -977,12 +972,8 @@ def get_model(X_train):
     x4 = Dropout(0.05)(x4)        
     x4 = Dense(128 , kernel_initializer=he_uniform(seed=0))(x4)      
     x4 = PReLU()(x4)
-    x4 = Dropout(0.05)(x4)        
-    x4 = Dense(128 , kernel_initializer=he_uniform(seed=0))(x4)      
-    x4 = PReLU()(x4)
-    
-
-      
+   
+     
     # image layer
     x5  = concatenate( [
                       average_HLS_Hs,average_HLS_Ls,average_HLS_Ss, average_HSV_Ss, average_HSV_Vs,
@@ -998,8 +989,6 @@ def get_model(X_train):
     x5 = Dense(128 , kernel_initializer=he_uniform(seed=0))(x5)      
     x5 = PReLU()(x5)
     x5 = Dropout(0.05)(x5)        
-    x5 = Dense(128 , kernel_initializer=he_uniform(seed=0))(x5)      
-    x5 = PReLU()(x5)
       
     x = concatenate([x1,
                      x2,
@@ -1429,18 +1418,7 @@ val_predicts = pd.DataFrame(data=val_predict, columns= label)
 val_predicts['item_id'] = train_item_ids
 val_predicts.to_csv('ml_nn_oof.csv', index=False)
 '''
-十折
-mean train rmse:  0.26231475995137876
-mean valid rmse:  0.2643060867629461
-
-5折
-mean train rmse:  0.2655642843173799
-mean valid rmse:  0.2711443787673053
-
-mean train rmse:  0.2808564076582153
-mean valid rmse:  0.2863055294634374
-
-
-mean train rmse:  0.2832556606201144
-mean valid rmse:  0.3080618776943726
+1w 5 folds
+#mean train rmse:  0.23350688575361983
+#mean valid rmse:  0.24647966724067033
 '''

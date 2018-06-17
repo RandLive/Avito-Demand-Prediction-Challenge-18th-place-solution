@@ -699,6 +699,8 @@ def feature_Eng_On_Item_count(df):
 #    df2['count_item_id_doy_price_p'] = df['count_item_id_doy_price_p'].fillna(-1)
 #    df2['count_item_id_doy_price_p'] = df2['count_item_id_doy_price_p']
     del tmp; gc.collect() 
+   
+    df2["cat_p_cat"] = df2["category_name"]*df2["parent_category_name"]
         
     return df2
 
