@@ -18,7 +18,7 @@ from tqdm import tqdm
 import datetime as dt
 
 print("Starting job at time:",time.time())
-debug = True
+debug = False
 print("loading data ...")
 used_cols = ["item_id", "user_id"]
 if debug == False:
@@ -32,14 +32,14 @@ if debug == False:
     test_periods = pd.read_csv("../input/periods_test.csv", parse_dates=["date_from", "date_to"])
 else:
     train_df = pd.read_csv("../input/train.csv", parse_dates = ["activation_date"])
-    train_df = shuffle(train_df, random_state=1234); train_df = train_df.iloc[:10000]
+    train_df = shuffle(train_df, random_state=1234); train_df = train_df.iloc[:200000]
     y = train_df["deal_probability"]
-    test_df = pd.read_csv("../input/test.csv",  nrows=1000, parse_dates = ["activation_date"])
+    test_df = pd.read_csv("../input/test.csv",  nrows=200000, parse_dates = ["activation_date"])
     
-    train_active = pd.read_csv("../input/train_active.csv",  nrows=1000, usecols=used_cols)
-    test_active = pd.read_csv("../input/test_active.csv",  nrows=1000, usecols=used_cols)
-    train_periods = pd.read_csv("../input/periods_train.csv",  nrows=1000, parse_dates=["date_from", "date_to"])
-    test_periods = pd.read_csv("../input/periods_test.csv",  nrows=1000, parse_dates=["date_from", "date_to"])
+    train_active = pd.read_csv("../input/train_active.csv",  nrows=200000, usecols=used_cols)
+    test_active = pd.read_csv("../input/test_active.csv",  nrows=200000, usecols=used_cols)
+    train_periods = pd.read_csv("../input/periods_train.csv",  nrows=200000, parse_dates=["date_from", "date_to"])
+    test_periods = pd.read_csv("../input/periods_test.csv",  nrows=200000, parse_dates=["date_from", "date_to"])
 print("loading data done!")
 
 
@@ -444,16 +444,13 @@ test_df["price"].fillna(-1,inplace=True)
 test_df["param_2"].fillna(-1,inplace=True)
 test_df["city"].fillna("nicapotato",inplace=True)
 
-train_df.reset_index()
-test_df.reset_index()
+train_df['price_rank_img'] = train_df.groupby('image_top_1')['price'].rank(ascending=False)
+train_df['price_rank_p2'] = train_df.groupby('param_2')['price'].rank(ascending=False)
+train_df['price_rank_city'] = train_df.groupby('city')['price'].rank(ascending=False)
 
-train_df['price_rank_img'] = train_df.groupby('image_top_1')['price'].rank('dense', ascending=False)
-train_df['price_rank_p2'] = train_df.groupby('param_2')['price'].rank('dense', ascending=False)
-train_df['price_rank_city'] = train_df.groupby('city')['price'].rank('dense', ascending=False)
-
-test_df['price_rank_img'] = test_df.groupby('image_top_1')['price'].rank('dense', ascending=False)
-test_df['price_rank_p2'] = test_df.groupby('param_2')['price'].rank('dense', ascending=False)
-test_df['price_rank_city'] = test_df.groupby('city')['price'].rank('dense', ascending=False)
+test_df['price_rank_img'] = test_df.groupby('image_top_1')['price'].rank( ascending=False)
+test_df['price_rank_p2'] = test_df.groupby('param_2')['price'].rank(ascending=False)
+test_df['price_rank_city'] = test_df.groupby('city')['price'].rank(ascending=False)
 #===============================================================================
 agg_cols = list(gp.columns)[1:]
 
@@ -1037,90 +1034,89 @@ print("All Done.")
 
 
 """
-[100]   train's rmse: 0.224287  valid's rmse: 0.226784
-[200]   train's rmse: 0.215942  valid's rmse: 0.220919
-[300]   train's rmse: 0.211367  valid's rmse: 0.218685
-[400]   train's rmse: 0.207791  valid's rmse: 0.21742
-[500]   train's rmse: 0.204988  valid's rmse: 0.216685
-[600]   train's rmse: 0.202394  valid's rmse: 0.216128
-[700]   train's rmse: 0.200003  valid's rmse: 0.21572
-[800]   train's rmse: 0.197772  valid's rmse: 0.215398
-[900]   train's rmse: 0.195805  valid's rmse: 0.21517
-[1000]  train's rmse: 0.193919  valid's rmse: 0.214992
-[1100]  train's rmse: 0.192108  valid's rmse: 0.21482
-[1200]  train's rmse: 0.190425  valid's rmse: 0.214702
-[1300]  train's rmse: 0.188824  valid's rmse: 0.214601
-[1400]  train's rmse: 0.18735   valid's rmse: 0.214528
-[1500]  train's rmse: 0.185847  valid's rmse: 0.214461
-[1600]  train's rmse: 0.184483  valid's rmse: 0.214416
-[1700]  train's rmse: 0.18309   valid's rmse: 0.214357
-[1800]  train's rmse: 0.181807  valid's rmse: 0.214319
-[1900]  train's rmse: 0.180638  valid's rmse: 0.214299
-[2000]  train's rmse: 0.179395  valid's rmse: 0.214274
-[2100]  train's rmse: 0.178304  valid's rmse: 0.214257
-[2200]  train's rmse: 0.177144  valid's rmse: 0.214214
-[2300]  train's rmse: 0.176103  valid's rmse: 0.214209
-[2400]  train's rmse: 0.175016  valid's rmse: 0.214194
-[2500]  train's rmse: 0.174032  valid's rmse: 0.214186
-[2600]  train's rmse: 0.173103  valid's rmse: 0.214186
-[2700]  train's rmse: 0.172152  valid's rmse: 0.214187
-[2800]  train's rmse: 0.171205  valid's rmse: 0.214179
-[2900]  train's rmse: 0.170241  valid's rmse: 0.214169
-[3000]  train's rmse: 0.169385  valid's rmse: 0.214169
-[3100]  train's rmse: 0.168455  valid's rmse: 0.214163
-[3200]  train's rmse: 0.167504  valid's rmse: 0.214162
-[3300]  train's rmse: 0.166622  valid's rmse: 0.214163
-[3400]  train's rmse: 0.165763  valid's rmse: 0.21416
-[3500]  train's rmse: 0.164916  valid's rmse: 0.214162
+[100]   train's rmse: 0.223593  valid's rmse: 0.225954
+[200]   train's rmse: 0.215623  valid's rmse: 0.220334
+[300]   train's rmse: 0.211318  valid's rmse: 0.218322
+[400]   train's rmse: 0.20774   valid's rmse: 0.217087
+[500]   train's rmse: 0.204843  valid's rmse: 0.216345
+[600]   train's rmse: 0.202171  valid's rmse: 0.21581
+[700]   train's rmse: 0.199833  valid's rmse: 0.21543
+[800]   train's rmse: 0.197627  valid's rmse: 0.215141
+[900]   train's rmse: 0.195684  valid's rmse: 0.214931
+[1000]  train's rmse: 0.193908  valid's rmse: 0.214775
+[1100]  train's rmse: 0.192139  valid's rmse: 0.214637
+[1200]  train's rmse: 0.190344  valid's rmse: 0.214534
+[1300]  train's rmse: 0.18877   valid's rmse: 0.214467
+[1400]  train's rmse: 0.187298  valid's rmse: 0.214397
+[1500]  train's rmse: 0.185853  valid's rmse: 0.21435
+[1600]  train's rmse: 0.184562  valid's rmse: 0.214304
+[1700]  train's rmse: 0.183291  valid's rmse: 0.214269
+[1800]  train's rmse: 0.182047  valid's rmse: 0.214234
+[1900]  train's rmse: 0.180895  valid's rmse: 0.214208
+[2000]  train's rmse: 0.179719  valid's rmse: 0.214187
+[2100]  train's rmse: 0.178661  valid's rmse: 0.214168
+[2200]  train's rmse: 0.177597  valid's rmse: 0.214147
+[2300]  train's rmse: 0.176488  valid's rmse: 0.214132
+[2400]  train's rmse: 0.175441  valid's rmse: 0.214116
+[2500]  train's rmse: 0.174444  valid's rmse: 0.214115
+[2600]  train's rmse: 0.173522  valid's rmse: 0.214113
+[2700]  train's rmse: 0.172584  valid's rmse: 0.214098
+[2800]  train's rmse: 0.171686  valid's rmse: 0.214086
+[2900]  train's rmse: 0.170728  valid's rmse: 0.214077
+[3000]  train's rmse: 0.169771  valid's rmse: 0.214059
+[3100]  train's rmse: 0.168922  valid's rmse: 0.214053
+[3200]  train's rmse: 0.168031  valid's rmse: 0.214049
+[3300]  train's rmse: 0.167161  valid's rmse: 0.214045
+[3400]  train's rmse: 0.166306  valid's rmse: 0.214039
+[3500]  train's rmse: 0.165485  valid's rmse: 0.214027
+[3600]  train's rmse: 0.164692  valid's rmse: 0.214014
+[3700]  train's rmse: 0.163846  valid's rmse: 0.214009
+[3800]  train's rmse: 0.163005  valid's rmse: 0.214013
 Early stopping, best iteration is:
-[3372]  train's rmse: 0.165991  valid's rmse: 0.214157
+[3673]  train's rmse: 0.164052  valid's rmse: 0.214006
 save model ...
 Model Evaluation Stage
 calculating RMSE ...
-RMSE: 0.21415702473160395
+RMSE: 0.21400613948093117
 
-[100]   train's rmse: 0.224194  valid's rmse: 0.226212
-[200]   train's rmse: 0.216386  valid's rmse: 0.221002
-[300]   train's rmse: 0.211897  valid's rmse: 0.218786
-[400]   train's rmse: 0.208266  valid's rmse: 0.217409
-[500]   train's rmse: 0.205304  valid's rmse: 0.216553
-[600]   train's rmse: 0.202488  valid's rmse: 0.215911
-[700]   train's rmse: 0.200101  valid's rmse: 0.215494
-[800]   train's rmse: 0.197923  valid's rmse: 0.21518
-[900]   train's rmse: 0.195967  valid's rmse: 0.214926
-[1000]  train's rmse: 0.19407   valid's rmse: 0.214719
-[1100]  train's rmse: 0.192387  valid's rmse: 0.214605
-[1200]  train's rmse: 0.190673  valid's rmse: 0.214469
-[1300]  train's rmse: 0.189063  valid's rmse: 0.214391
-[1400]  train's rmse: 0.187486  valid's rmse: 0.214298
-[1500]  train's rmse: 0.185999  valid's rmse: 0.214193
-[1600]  train's rmse: 0.18474   valid's rmse: 0.214153
-[1700]  train's rmse: 0.183476  valid's rmse: 0.214114
-[1800]  train's rmse: 0.182215  valid's rmse: 0.21406
-[1900]  train's rmse: 0.181066  valid's rmse: 0.21403
-[2000]  train's rmse: 0.17996   valid's rmse: 0.214007
-[2100]  train's rmse: 0.178805  valid's rmse: 0.213972
-[2200]  train's rmse: 0.177769  valid's rmse: 0.213955
-[2300]  train's rmse: 0.176744  valid's rmse: 0.213942
-[2400]  train's rmse: 0.175706  valid's rmse: 0.213925
-[2500]  train's rmse: 0.174681  valid's rmse: 0.213902
-[2600]  train's rmse: 0.173647  valid's rmse: 0.213879
-[2700]  train's rmse: 0.172723  valid's rmse: 0.21387
-[2800]  train's rmse: 0.171756  valid's rmse: 0.213847
-[2900]  train's rmse: 0.170802  valid's rmse: 0.21384
-[3000]  train's rmse: 0.16993   valid's rmse: 0.213835
-[3100]  train's rmse: 0.16901   valid's rmse: 0.21383
-[3200]  train's rmse: 0.168097  valid's rmse: 0.213827
-[3300]  train's rmse: 0.167216  valid's rmse: 0.21382
-[3400]  train's rmse: 0.166333  valid's rmse: 0.213822
-[3500]  train's rmse: 0.165399  valid's rmse: 0.213814
-[3600]  train's rmse: 0.164515  valid's rmse: 0.213821
+[100]   train's rmse: 0.223582  valid's rmse: 0.225502
+[200]   train's rmse: 0.215434  valid's rmse: 0.220021
+[300]   train's rmse: 0.210688  valid's rmse: 0.217757
+[400]   train's rmse: 0.207106  valid's rmse: 0.216595
+[500]   train's rmse: 0.204216  valid's rmse: 0.215866
+[600]   train's rmse: 0.201514  valid's rmse: 0.215311
+[700]   train's rmse: 0.199158  valid's rmse: 0.214968
+[800]   train's rmse: 0.197012  valid's rmse: 0.214672
+[900]   train's rmse: 0.194999  valid's rmse: 0.21444
+[1000]  train's rmse: 0.193079  valid's rmse: 0.214231
+[1100]  train's rmse: 0.191278  valid's rmse: 0.21411
+[1200]  train's rmse: 0.189546  valid's rmse: 0.214021
+[1300]  train's rmse: 0.187962  valid's rmse: 0.213931
+[1400]  train's rmse: 0.186516  valid's rmse: 0.213862
+[1500]  train's rmse: 0.185186  valid's rmse: 0.213808
+[1600]  train's rmse: 0.183792  valid's rmse: 0.213751
+[1700]  train's rmse: 0.182519  valid's rmse: 0.213717
+[1800]  train's rmse: 0.181261  valid's rmse: 0.213675
+[1900]  train's rmse: 0.18006   valid's rmse: 0.213658
+[2000]  train's rmse: 0.178888  valid's rmse: 0.213626
+[2100]  train's rmse: 0.177775  valid's rmse: 0.213613
+[2200]  train's rmse: 0.176661  valid's rmse: 0.213606
+[2300]  train's rmse: 0.175599  valid's rmse: 0.213587
+[2400]  train's rmse: 0.174618  valid's rmse: 0.213575
+[2500]  train's rmse: 0.173621  valid's rmse: 0.213565
+[2600]  train's rmse: 0.172678  valid's rmse: 0.213552
+[2700]  train's rmse: 0.171702  valid's rmse: 0.213539
+[2800]  train's rmse: 0.17071   valid's rmse: 0.213533
+[2900]  train's rmse: 0.169786  valid's rmse: 0.213533
+[3000]  train's rmse: 0.168882  valid's rmse: 0.213523
+[3100]  train's rmse: 0.168059  valid's rmse: 0.213526
+[3200]  train's rmse: 0.167117  valid's rmse: 0.213531
 Early stopping, best iteration is:
-[3488]  train's rmse: 0.165528  valid's rmse: 0.213812
+[3027]  train's rmse: 0.168646  valid's rmse: 0.213521
 save model ...
 Model Evaluation Stage
 calculating RMSE ...
-RMSE: 0.2138117158974607
+RMSE: 0.21352051844324685
 /home/qifeng/anaconda3/lib/python3.6/site-packages/lightgbm/basic.py:447: UserWarning: Converting data to scipy sparse matrix.
   warnings.warn('Converting data to scipy sparse matrix.')
 calculating RMSE ...
@@ -1132,59 +1128,79 @@ training in fold 7
 training in fold 8
 training in fold 9
 training in fold 10
-mean rmse is: 0.21398437031453232
+mean rmse is: 0.213763328962089
 Features importance...
-                             feature       gain  split
-104                    ridge_preds_2  12.773476  19889
-44                       image_top_1  10.971517  88279
-103                    ridge_preds_1   6.950888  21230
-39                              city   5.055901  68388
-48                           param_1   4.259768  34110
-49                           param_2   2.700232  18914
-38                     category_name   2.540599  17555
-47                      n_user_items   2.241311  15263
-53                             price   2.188239  21966
-54                            region   1.695646  39244
-51              parent_category_name   1.489810   4015
-50                           param_3   1.264952  17708
-55                           user_id   0.869296  12664
-101  median_deal_probability_param_2   0.866860   2332
-105                   ridge_preds_1a   0.794409  17529
-19                    average_LAB_As   0.734307  17769
-35                  avg_days_up_user   0.727771  16830
-36                 avg_times_up_user   0.697693  12511
-80            text_feature_num_chars   0.639440   7094
-52                        population   0.620826  18542
-46                   item_seq_number   0.536099  18162
-82     text_feature_num_unique_words   0.485907   2687
-97                  item_seq_number+   0.476807   6846
-23                    average_LUV_Us   0.441738  15365
-37                       blurinesses   0.436873  18042
-96                            price+   0.395411   2651
-88             description_num_chars   0.391752  15813
-33               average_pixel_width   0.377858  17054
-14                    average_HLS_Hs   0.374656  17294
-16                    average_HLS_Ss   0.373272  16551
-26                 average_YCrCb_Crs   0.371275  13992
-31                     average_blues   0.360050  14651
-17                    average_HSV_Ss   0.357289  15140
-18                    average_HSV_Vs   0.349322  13772
-29                    average_YUV_Vs   0.345432  15252
-85          text_feature_2_num_words   0.345344    985
-92                   title_num_chars   0.345142  13681
-42                             image   0.344679  17772
-43                     image_quality   0.342040  16600
-89             description_num_words   0.340504  11975
-27                  average_YCrCb_Ys   0.320716  11618
-34                      average_reds   0.320075  13703
-24                    average_LUV_Vs   0.317274  13307
-20                    average_LAB_Bs   0.316370  14094
-15                    average_HLS_Ls   0.313417  12379
-56                         user_type   0.312490   2835
-28                    average_YUV_Us   0.310682  13644
-21                    average_LAB_Ls   0.293948  12749
-25                 average_YCrCb_Cbs   0.290696  12833
-58                            widths   0.284579   8265
+                            feature       gain  split
+30                      image_top_1  11.005597  88004
+93                    ridge_preds_2  10.520005  19688
+25                             city   5.180677  64772
+24                    category_name   4.703844  16103
+34                          param_1   4.644145  29940
+92                    ridge_preds_1   4.047260  18109
+95                   ridge_preds_2a   3.343366   2637
+35                          param_2   2.765508  16938
+33                     n_user_items   1.685780  12834
+43                           region   1.657514  35886
+36                          param_3   1.543734  16726
+39                            price   1.530055  17491
+42                    price_rank_p2   1.501826  17399
+37             parent_category_name   1.407256   3450
+94                   ridge_preds_1a   1.311204  12735
+41                   price_rank_img   1.266895  15855
+44                          user_id   1.040338  11547
+21                 avg_days_up_user   0.972205  13755
+90  median_deal_probability_param_2   0.925081   1632
+5                    average_LAB_As   0.768245  14452
+40                  price_rank_city   0.737579  18018
+22                avg_times_up_user   0.673765  10193
+69           text_feature_num_chars   0.634663   5760
+32                  item_seq_number   0.613014  15211
+45                        user_type   0.514998   2218
+38                       population   0.460343  13250
+86                 item_seq_number+   0.422062   5385
+77            description_num_chars   0.403395  13519
+9                    average_LUV_Us   0.384964  11946
+3                    average_HSV_Ss   0.351729  12962
+23                      blurinesses   0.351412  13209
+12                average_YCrCb_Crs   0.348500  11625
+81                  title_num_chars   0.333872  10592
+0                    average_HLS_Hs   0.330325  13311
+78            description_num_words   0.322525   9111
+2                    average_HLS_Ss   0.312696  12696
+15                   average_YUV_Vs   0.312625  11660
+19              average_pixel_width   0.311118  13099
+14                   average_YUV_Us   0.311111  11005
+29                    image_quality   0.309966  13901
+4                    average_HSV_Vs   0.309523  10988
+28                            image   0.297330  13660
+20                     average_reds   0.297178  10570
+85                           price+   0.296336   2158
+1                    average_HLS_Ls   0.291614   9661
+10                   average_LUV_Vs   0.289084  11377
+17                    average_blues   0.286974  11214
+16                   average_YUV_Ys   0.281466   9150
+18                   average_greens   0.264994   9413
+6                    average_LAB_Bs   0.264568  10686
 All Done.
+
+runfile('/home/qifeng/avito/code/ensemble_corr.py', wdir='/home/qifeng/avito/code')
+correlation between models outputs
+          dp1       dp2
+dp1  1.000000  0.977081
+dp2  0.977081  1.000000
+
+200000
+-
+[100]   train's rmse: 0.218284  valid's rmse: 0.231198
+[200]   train's rmse: 0.20316   valid's rmse: 0.226698
+[300]   train's rmse: 0.192787  valid's rmse: 0.225306
+[400]   train's rmse: 0.184033  valid's rmse: 0.224649
+[500]   train's rmse: 0.176262  valid's rmse: 0.224342
++
+[100]   train's rmse: 0.216909  valid's rmse: 0.230341
+[200]   train's rmse: 0.201885  valid's rmse: 0.225742
+[300]   train's rmse: 0.191112  valid's rmse: 0.224378
+[400]   train's rmse: 0.182517  valid's rmse: 0.223814
+[500]   train's rmse: 0.174832  valid's rmse: 0.223571
 
 """
