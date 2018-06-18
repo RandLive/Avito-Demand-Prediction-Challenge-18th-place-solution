@@ -42,7 +42,7 @@ from keras import backend as K
 
 
 print("Starting job at time:",time.time())
-debug = True
+debug = False
 print("loading data ...")
 used_cols = ["item_id", "user_id"]
 if debug == False:
@@ -56,7 +56,7 @@ if debug == False:
     test_periods = pd.read_csv("../input/periods_test.csv", parse_dates=["date_from", "date_to"])
 else:
     train_df = pd.read_csv("../input/train.csv", parse_dates = ["activation_date"])
-    train_df = shuffle(train_df, random_state=1234); train_df = train_df.iloc[:10000]
+    train_df = shuffle(train_df, random_state=1234); train_df = train_df.iloc[:400000]
     y = train_df["deal_probability"]
     test_df = pd.read_csv("../input/test.csv",  nrows=1000, parse_dates = ["activation_date"])
     
@@ -927,12 +927,12 @@ def get_model(X_train):
                       item_seq_number_p,
                       ] )
       
-    x2 = Dropout(0.05)(x2)
     x2 = Dense(128, kernel_initializer=he_uniform(seed=0))(x2)
+    x2 = BatchNormalization()(x2) 
+    x2 = Dropout(0.3)(x2)
     x2 = PReLU()(x2)
-#    x2 = Dropout(0.05)(x2)
-#    x2 = Dense(128, kernel_initializer=he_uniform(seed=0))(x2)
-#    x2 = PReLU()(x2)
+
+
        
     # numerical layer 
     x3  = concatenate([
@@ -944,9 +944,9 @@ def get_model(X_train):
                       avg_days_up_user, avg_times_up_user, income,
                       n_user_items, population, price, wday
                       ])
-             
-    x3 = Dropout(0.05)(x3)        
-    x3 = Dense(128 , kernel_initializer=he_uniform(seed=0))(x3)      
+                   
+    x3 = Dense(128 , kernel_initializer=he_uniform(seed=0))(x3)
+    x3= BatchNormalization()(x3)   
     x3 = PReLU()(x3)
 
       
@@ -968,9 +968,9 @@ def get_model(X_train):
                       is_in_desc_10, num_title_Exclamation, num_title_Question, 
                       num_desc_Exclamation, num_desc_Question
                       ])
-
-    x4 = Dropout(0.05)(x4)        
-    x4 = Dense(128 , kernel_initializer=he_uniform(seed=0))(x4)      
+      
+    x4 = Dense(128 , kernel_initializer=he_uniform(seed=0))(x4)  
+    x4 = BatchNormalization()(x4)     
     x4 = PReLU()(x4)
    
      
@@ -982,50 +982,47 @@ def get_model(X_train):
                       blurinesses, dullnesses, heights, image_quality, average_reds
                       ])
 
-    x5 = Dropout(0.05)(x5)        
+     
+    x5 = Dense(128 , kernel_initializer=he_uniform(seed=0))(x5)  
+    x5 = BatchNormalization()(x5)     
+    x5 = PReLU()(x5)
+    x5 = Dropout(0.3)(x5)
+        
     x5 = Dense(128 , kernel_initializer=he_uniform(seed=0))(x5)      
     x5 = PReLU()(x5)
-    x5 = Dropout(0.05)(x5)        
-    x5 = Dense(128 , kernel_initializer=he_uniform(seed=0))(x5)      
-    x5 = PReLU()(x5)
-    x5 = Dropout(0.05)(x5)        
-      
+          
     x = concatenate([x1,
                      x2,
                      x3,
                      x4,
                      x5
                      ])
-    
-   
-    x = Dropout(0.1)(x)      
+      
+    x = BatchNormalization()(x) 
+    x = GaussianDropout(0.25)(x)      
+    x = Dense(256 , kernel_initializer=he_uniform(seed=0))(x)       
+    x = PReLU()(x)
+#   
+    x = BatchNormalization()(x) 
+    x = GaussianDropout(0.3)(x)      
     x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)       
     x = PReLU()(x)
-#    
-    x = Dropout(0.1)(x)      
-    x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)       
-    x = PReLU()(x)
-    
-    x = Dropout(0.1)(x)      
-    x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)       
-    x = PReLU()(x)
-    
-    x = Dropout(0.1)(x)      
-    x = Dense(128 , kernel_initializer=he_uniform(seed=0))(x)       
-    x = PReLU()(x)
-    
-    x = Dropout(0.1)(x)      
+
+    x = BatchNormalization()(x)     
+    x = GaussianDropout(0.3)(x)      
     x = Dense(64 , kernel_initializer=he_uniform(seed=0))(x)       
     x = PReLU()(x)
-    
-    x = Dropout(0.1)(x)      
+
+    x = BatchNormalization()(x)     
+    x = GaussianDropout(0.3)(x)      
     x = Dense(32 , kernel_initializer=he_uniform(seed=0))(x)       
     x = PReLU()(x)
-    
-    x = Dropout(0.1)(x)      
-    x = Dense(16 , kernel_initializer=he_uniform(seed=0))(x)       
+
+    x = BatchNormalization()(x) 
+    x = GaussianDropout(0.3)(x)      
+    x = Dense(32 , kernel_initializer=he_uniform(seed=0))(x)       
     x = PReLU()(x)
-       
+
     # output layer    
     x = Dense(1)(x)
    
@@ -1419,6 +1416,6 @@ val_predicts['item_id'] = train_item_ids
 val_predicts.to_csv('ml_nn_oof.csv', index=False)
 '''
 1w 5 folds
-mean train rmse:  0.2235833981951847
-mean valid rmse:  0.2449133247220292
+mean train rmse:  0.22829274467321276
+mean valid rmse:  0.23576859668461086
 '''
