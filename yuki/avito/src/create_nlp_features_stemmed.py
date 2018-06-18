@@ -222,56 +222,56 @@ def cleanName(text):
 df['title'] = df['title'].apply(lambda x: cleanName(x)).fillna("")
 df["description"]   = df["description"].apply(lambda x: cleanName(x)).fillna("")
 
-textfeats = ["description", "title"]
-tfidf_para = {
-    "stop_words": russian_stop,
-    "analyzer": 'word',
-    "token_pattern": r'\w{1,}',
-    "sublinear_tf": True,
-    "dtype": np.float32,
-    "norm": 'l2',
-    "min_df":3,
-    "smooth_idf":False
-}
-
-def get_col(col_name): return lambda x: x[col_name]
-
-vectorizer = FeatureUnion([
-        ('description',TfidfVectorizer(
-            ngram_range=(1, 2),
-            max_features=17000,
-            **tfidf_para,
-            preprocessor=get_col('description'))),
-        ('title',CountVectorizer(
-            ngram_range=(1, 2),
-            stop_words = russian_stop,
-            preprocessor=get_col('title')))
-    ])
-
-#Fit my vectorizer on the entire dataset instead of the training rows
-#Score improved by .0001
-vectorizer.fit(df.to_dict('records'))
-
-ready_df = vectorizer.transform(df.to_dict('records'))
-tfvocab = vectorizer.get_feature_names()
-
-# Drop Text Cols
-textfeats = ["description", "title"]
-df.drop(textfeats, axis=1,inplace=True)
-
-from sklearn.metrics import mean_squared_error
-from math import sqrt
-
-ridge_params = {'alpha':20.0, 'fit_intercept':True, 'normalize':False, 'copy_X':True,
-                'max_iter':None, 'tol':0.001, 'solver':'auto', 'random_state':SEED}
-
-ridge = SklearnWrapper(clf=Ridge, seed = SEED, params = ridge_params)
-ridge_oof_train, ridge_oof_test = get_oof(ridge, ready_df[:ntrain], y, ready_df[ntrain:])
-train_out = pd.DataFrame(ridge_oof_train,columns=["ridge_oof_base_stemmed_2"])
-test_out = pd.DataFrame(ridge_oof_test,columns=["ridge_oof_base_stemmed_2"])
-
-to_parquet(train_out, "../features/oof_ridge_tfidf_stemmed_2_train.parquet")
-to_parquet(test_out, "../features/oof_ridge_tfidf_stemmed_2_test.parquet")
+# textfeats = ["description", "title"]
+# tfidf_para = {
+#     "stop_words": russian_stop,
+#     "analyzer": 'word',
+#     "token_pattern": r'\w{1,}',
+#     "sublinear_tf": True,
+#     "dtype": np.float32,
+#     "norm": 'l2',
+#     "min_df":3,
+#     "smooth_idf":False
+# }
+#
+# def get_col(col_name): return lambda x: x[col_name]
+#
+# vectorizer = FeatureUnion([
+#         ('description',TfidfVectorizer(
+#             ngram_range=(1, 2),
+#             max_features=17000,
+#             **tfidf_para,
+#             preprocessor=get_col('description'))),
+#         ('title',CountVectorizer(
+#             ngram_range=(1, 2),
+#             stop_words = russian_stop,
+#             preprocessor=get_col('title')))
+#     ])
+#
+# #Fit my vectorizer on the entire dataset instead of the training rows
+# #Score improved by .0001
+# vectorizer.fit(df.to_dict('records'))
+#
+# ready_df = vectorizer.transform(df.to_dict('records'))
+# tfvocab = vectorizer.get_feature_names()
+#
+# # Drop Text Cols
+# textfeats = ["description", "title"]
+#
+#
+# from sklearn.metrics import mean_squared_error
+# from math import sqrt
+#
+# ridge_params = {'alpha':20.0, 'fit_intercept':True, 'normalize':False, 'copy_X':True,
+#                 'max_iter':None, 'tol':0.001, 'solver':'auto', 'random_state':SEED}
+#
+# ridge = SklearnWrapper(clf=Ridge, seed = SEED, params = ridge_params)
+# ridge_oof_train, ridge_oof_test = get_oof(ridge, ready_df[:ntrain], y, ready_df[ntrain:])
+# train_out = pd.DataFrame(ridge_oof_train,columns=["ridge_oof_base_stemmed_2"])
+# test_out = pd.DataFrame(ridge_oof_test,columns=["ridge_oof_base_stemmed_2"])
+#
+# to_parquet(train_out, "../features/oof_ridge_tfidf_stemmed_2_train.parquet")
+# to_parquet(test_out, "../features/oof_ridge_tfidf_stemmed_2_test.parquet")
 #
 
 

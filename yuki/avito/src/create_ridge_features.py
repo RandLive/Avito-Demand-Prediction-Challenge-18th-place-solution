@@ -31,8 +31,6 @@ import string
 punctuations = string.punctuation
 
 # Viz
-import seaborn as sns
-import matplotlib.pyplot as plt
 import re
 import string
 
