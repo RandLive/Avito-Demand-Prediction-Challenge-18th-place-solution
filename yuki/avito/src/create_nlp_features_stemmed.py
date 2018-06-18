@@ -108,67 +108,67 @@ for col in textcols:
     vectorizer = TfidfVectorizer(ngram_range=(1, 2), max_features=17000, **tfidf_para)
     vecs = vectorizer.fit_transform(df_target.values)
 
-    df_out = pd.DataFrame()
-    df_out[col + "_stemmed_tfidf_mean"] = Parallel(n_jobs=-1)([delayed(np.mean)(v) for v in vecs])
-    print("mean done")
-    df_out[col + "_stemmed_tfidf_max"] = Parallel(n_jobs=-1)([delayed(np.max)(v) for v in vecs])
-    print("max done")
-    df_out[col + "_stemmed_tfidf_min"] = Parallel(n_jobs=-1)([delayed(np.min)(v) for v in vecs])
-    print("min done")
-    df_out[col + "_stemmed_tfidf_std"] = Parallel(n_jobs=-1)([delayed(get_std)(v) for v in vecs])
-    print("std done")
-    df_out[col + "_stemmed_tfidf_skew"] = Parallel(n_jobs=-1)([delayed(get_skew)(v) for v in vecs])
-    print("skew done")
-    df_out[col + "_stemmed_tfidf_kur"] = Parallel(n_jobs=-1)([delayed(get_kur)(v) for v in vecs])
-    print("kurtoisis done")
-    df_out[col + "_stemmed_tfidf_entropy"] = Parallel(n_jobs=-1)([delayed(get_entropy)(v) for v in vecs])
-    print("entropy done")
-    df_out[col + "_stemmed_tfidf_sum"] = Parallel(n_jobs=-1)([delayed(np.sum)(v) for v in vecs])
-    print("sum done")
-    to_parquet(df_out.iloc[:ntrain, :], "../features/fe_tfidf_stemmed_basic_{}_train.parquet".format(col))
-    to_parquet(df_out.iloc[ntrain:, :], "../features/fe_tfidf_stemmed_basic_{}_test.parquet".format(col))
-    del df_out; gc.collect()
+    # df_out = pd.DataFrame()
+    # df_out[col + "_stemmed_tfidf_mean"] = Parallel(n_jobs=-1)([delayed(np.mean)(v) for v in vecs])
+    # print("mean done")
+    # df_out[col + "_stemmed_tfidf_max"] = Parallel(n_jobs=-1)([delayed(np.max)(v) for v in vecs])
+    # print("max done")
+    # df_out[col + "_stemmed_tfidf_min"] = Parallel(n_jobs=-1)([delayed(np.min)(v) for v in vecs])
+    # print("min done")
+    # df_out[col + "_stemmed_tfidf_std"] = Parallel(n_jobs=-1)([delayed(get_std)(v) for v in vecs])
+    # print("std done")
+    # df_out[col + "_stemmed_tfidf_skew"] = Parallel(n_jobs=-1)([delayed(get_skew)(v) for v in vecs])
+    # print("skew done")
+    # df_out[col + "_stemmed_tfidf_kur"] = Parallel(n_jobs=-1)([delayed(get_kur)(v) for v in vecs])
+    # print("kurtoisis done")
+    # df_out[col + "_stemmed_tfidf_entropy"] = Parallel(n_jobs=-1)([delayed(get_entropy)(v) for v in vecs])
+    # print("entropy done")
+    # df_out[col + "_stemmed_tfidf_sum"] = Parallel(n_jobs=-1)([delayed(np.sum)(v) for v in vecs])
+    # print("sum done")
+    # to_parquet(df_out.iloc[:ntrain, :], "../features/fe_tfidf_stemmed_basic_{}_train.parquet".format(col))
+    # to_parquet(df_out.iloc[ntrain:, :], "../features/fe_tfidf_stemmed_basic_{}_test.parquet".format(col))
+    # del df_out; gc.collect()
 
     oof_sgd(vecs[:ntrain,:],vecs[ntrain:,:],y,"tfidf_stemmed_{}".format(col))
     oof_lgbm(vecs[:ntrain,:].astype(np.float32),vecs[ntrain:,:].astype(np.float32),y,"tfidf_stemmed_{}".format(col))
     del vecs; gc.collect()
 
-for col in textcols:
-    df_target = df[col].fillna("")
-    tfidf_para = {
-        "stop_words": russian_stop,
-        "analyzer": 'word',
-        "token_pattern": r'\w{1,}',
-        "sublinear_tf": True,
-        "dtype": np.float32,
-        "norm": 'l2',
-        "min_df":3,
-        "smooth_idf":False
-    }
-    vectorizer = TfidfVectorizer(ngram_range=(1, 2), max_features=50000, **tfidf_para)
-
-    vecs = vectorizer.fit_transform(df_target.values)
-    # tfidf dimensionality reduction
-    print("Start dimensionality reduction")
-    ## SVD
-    U, S , _ = svds(vecs.tocsc(),k=3)
-    m_svd = [U[i] * S for i in range(U.shape[0])]
-    m_svd = np.array(m_svd)
-    train_svd = pd.DataFrame(m_svd[:ntrain, :], columns=["svd_stemmed_{}_1".format(col+"_tfidf"), "svd_stemmed_{}_2".format(col+"_tfidf"), "svd_stemmed_{}_3".format(col+"_tfidf")])
-    test_svd = pd.DataFrame(m_svd[ntrain:, :], columns=["svd_stemmed_{}_1".format(col+"_tfidf"), "svd_stemmed_{}_2".format(col+"_tfidf"), "svd_stemmed_{}_3".format(col+"_tfidf")])
-    to_parquet(train_svd, "../features/fe_tfidf_stemmed_svd_{}_train.parquet".format(col))
-    to_parquet(test_svd, "../features/fe_tfidf_stemmed_svd_{}_test.parquet".format(col))
-    del m_svd, train_svd, test_svd; gc.collect()
-
-    ## NMF
-    nmf = NMF(n_components=3)
-    X_nmf = nmf.fit_transform(vecs)
-    df_nmf = pd.DataFrame(X_nmf, columns=["nmf_stemmed_{}_1".format(col+"_tfidf"), "nmf_stemmed_{}_2".format(col+"_tfidf"), "nmf_stemmed_{}_3".format(col+"_tfidf")])
-    nmf_train = df_nmf.iloc[:ntrain,:]
-    nmf_test = df_nmf.iloc[ntrain:,:]
-    to_parquet(nmf_train, "../features/fe_tfidf_stemmed_nmf_{}_train.parquet".format(col))
-    to_parquet(nmf_test, "../features/fe_tfidf_stemmed_nmf_{}_test.parquet".format(col))
-    del df_nmf, nmf_train, nmf_test; gc.collect()
+# for col in textcols:
+#     df_target = df[col].fillna("")
+#     tfidf_para = {
+#         "stop_words": russian_stop,
+#         "analyzer": 'word',
+#         "token_pattern": r'\w{1,}',
+#         "sublinear_tf": True,
+#         "dtype": np.float32,
+#         "norm": 'l2',
+#         "min_df":3,
+#         "smooth_idf":False
+#     }
+#     vectorizer = TfidfVectorizer(ngram_range=(1, 2), max_features=50000, **tfidf_para)
+#
+#     vecs = vectorizer.fit_transform(df_target.values)
+#     # tfidf dimensionality reduction
+#     print("Start dimensionality reduction")
+#     ## SVD
+#     U, S , _ = svds(vecs.tocsc(),k=3)
+#     m_svd = [U[i] * S for i in range(U.shape[0])]
+#     m_svd = np.array(m_svd)
+#     train_svd = pd.DataFrame(m_svd[:ntrain, :], columns=["svd_stemmed_{}_1".format(col+"_tfidf"), "svd_stemmed_{}_2".format(col+"_tfidf"), "svd_stemmed_{}_3".format(col+"_tfidf")])
+#     test_svd = pd.DataFrame(m_svd[ntrain:, :], columns=["svd_stemmed_{}_1".format(col+"_tfidf"), "svd_stemmed_{}_2".format(col+"_tfidf"), "svd_stemmed_{}_3".format(col+"_tfidf")])
+#     to_parquet(train_svd, "../features/fe_tfidf_stemmed_svd_{}_train.parquet".format(col))
+#     to_parquet(test_svd, "../features/fe_tfidf_stemmed_svd_{}_test.parquet".format(col))
+#     del m_svd, train_svd, test_svd; gc.collect()
+#
+#     ## NMF
+#     nmf = NMF(n_components=3)
+#     X_nmf = nmf.fit_transform(vecs)
+#     df_nmf = pd.DataFrame(X_nmf, columns=["nmf_stemmed_{}_1".format(col+"_tfidf"), "nmf_stemmed_{}_2".format(col+"_tfidf"), "nmf_stemmed_{}_3".format(col+"_tfidf")])
+#     nmf_train = df_nmf.iloc[:ntrain,:]
+#     nmf_test = df_nmf.iloc[ntrain:,:]
+#     to_parquet(nmf_train, "../features/fe_tfidf_stemmed_nmf_{}_train.parquet".format(col))
+#     to_parquet(nmf_test, "../features/fe_tfidf_stemmed_nmf_{}_test.parquet".format(col))
+#     del df_nmf, nmf_train, nmf_test; gc.collect()
 
 
 # Meta Text Features

@@ -81,10 +81,6 @@ for col in cate_cols:
     else:
         all_vecs = hstack([all_vecs, vecs])
 
-    # oof
-    oof_lgbm_classify(vecs[:ntrain,:],vecs[ntrain:,:],y_bin,"categorical_ohe_bin_classify_{}".format(col))
-    oof_lgbm_classify(vecs[:ntrain,:],vecs[ntrain:,:],y_high,"categorical_ohe_high_classify_{}".format(col))
-
 all_vecs = all_vecs.tocsr()
 oof_lgbm_classify(all_vecs[:ntrain,:],all_vecs[ntrain:,:],y_bin,"categorical_ohe_bin_classify_{}".format("all_categories"))
 oof_lgbm_classify(all_vecs[:ntrain,:],all_vecs[ntrain:,:],y_high,"categorical_ohe_high_classify_{}".format("all_categories"))
@@ -115,8 +111,7 @@ for col in textcols:
 
     vectorizer = TfidfVectorizer(ngram_range=(1, 2), max_features=17000, **tfidf_para)
     vecs = vectorizer.fit_transform(df_target.values)
-    if col=="title":
-        oof_lgbm_classify(vecs[:ntrain,:].astype(np.float32),vecs[ntrain:,:].astype(np.float32),y_bin,"tfidf_stemmed_bin_classify_{}".format(col))
+    oof_lgbm_classify(vecs[:ntrain,:].astype(np.float32),vecs[ntrain:,:].astype(np.float32),y_bin,"tfidf_stemmed_bin_classify_{}".format(col))
     oof_lgbm_classify(vecs[:ntrain,:].astype(np.float32),vecs[ntrain:,:].astype(np.float32),y_high,"tfidf_stemmed_high_classify_{}".format(col))
     del vecs; gc.collect()
 
