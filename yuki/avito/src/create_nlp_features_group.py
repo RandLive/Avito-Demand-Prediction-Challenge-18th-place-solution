@@ -78,7 +78,7 @@ def stemming_text(text):
             out.append(stemed)
     return " ".join(out)
 
-df["text_all"] = Parallel(n_jobs=3,verbose=1)([delayed(stemming_text)(x) for x in df.text_all.fillna("")])
+df["text_all"] = Parallel(n_jobs=6,verbose=1)([delayed(stemming_text)(x) for x in df.text_all.fillna("")])
 
 gc.collect()
 print('\nAll Data shape: {} Rows, {} Columns'.format(*df.shape))
