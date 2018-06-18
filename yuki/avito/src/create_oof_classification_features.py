@@ -123,18 +123,18 @@ for col in textcols:
 
 # Fasttextmodel
 # input file for fasttext(without stopwords, punctuations)
-f = open("../tmp/text_for_fasttext_stemmed.txt", "w")
-for text in df["text_all"].values:
-    text = text.lower()
-    t = ' '.join([t for t in text.split() if t not in russian_stop and t not in punctuations and '\n' != t and " " != t])
-    t = [s for s in t if "\n" != s and '"' != s]
-    text = "".join(t)
-    text = re.sub(r"^\s+","",text)
-    f.write("".join(text))
-    f.write("\n")
-f.close()
-
-os.system("fasttext skipgram -input ../tmp/text_for_fasttext_stemmed.txt -output ../model/fasttext_model_stemmed -dim 100 -minCount 1")
+# f = open("../tmp/text_for_fasttext_stemmed.txt", "w")
+# for text in df["text_all"].values:
+#     text = text.lower()
+#     t = ' '.join([t for t in text.split() if t not in russian_stop and t not in punctuations and '\n' != t and " " != t])
+#     t = [s for s in t if "\n" != s and '"' != s]
+#     text = "".join(t)
+#     text = re.sub(r"^\s+","",text)
+#     f.write("".join(text))
+#     f.write("\n")
+# f.close()
+#
+# os.system("fasttext skipgram -input ../tmp/text_for_fasttext_stemmed.txt -output ../model/fasttext_model_stemmed -dim 100 -minCount 1")
 # create sentence vectors
 import fastText
 text = df["text_all"].values[:ntrain+ntest]

@@ -82,9 +82,9 @@ for col in cate_cols:
     else:
         all_vecs = hstack([all_vecs, vecs])
 
-    oof
-    oof_sgd(vecs[:ntrain,:],vecs[ntrain:,:],y,"categorical_ohe_{}".format(col))
-    oof_lgbm(vecs[:ntrain,:],vecs[ntrain:,:],y,"categorical_ohe_{}".format(col))
+
+    # oof_sgd(vecs[:ntrain,:],vecs[ntrain:,:],y,"categorical_ohe_{}".format(col))
+    # oof_lgbm(vecs[:ntrain,:],vecs[ntrain:,:],y,"categorical_ohe_{}".format(col))
 all_vecs = all_vecs.tocsr()
 oof_sgd(all_vecs[:ntrain,:],all_vecs[ntrain:,:],y,"categorical_ohe_{}".format("all_categories"))
 oof_lgbm(all_vecs[:ntrain,:],all_vecs[ntrain:,:],y,"categorical_ohe_{}".format("all_categories"))
