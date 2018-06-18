@@ -174,7 +174,7 @@ def get_entropy(x): return entropy(x.todense().T)[0]
 # Meta Text Features
 
 
-folds = get_kfolds()
+kfolds = get_kfolds()
 
 print("Creating Ridge Features...")
 class SklearnWrapper(object):
