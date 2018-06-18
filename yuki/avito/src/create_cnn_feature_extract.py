@@ -43,7 +43,7 @@ def get_id_chunks(ix_train, batch_size):
 def resize_img(im, inter=cv2.INTER_AREA):
     height, width, _ = im.shape
     if height > width:
-        new_dim = (width*//height, im_dim)
+        new_dim = (width//height, im_dim)
     else:
         new_dim = (im_dim, height*im_dim//width)
 
