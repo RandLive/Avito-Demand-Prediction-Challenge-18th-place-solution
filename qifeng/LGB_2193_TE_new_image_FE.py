@@ -14,6 +14,8 @@ from sklearn.utils import shuffle
 from contextlib import contextmanager
 from sklearn.externals import joblib
 import time
+from tqdm import tqdm
+import datetime as dt
 
 print("Starting job at time:",time.time())
 debug = True
@@ -331,6 +333,40 @@ train_df = train_df.join(x_train.set_index('ids'), on='image')
 test_df = test_df.join(x_test.set_index('ids'), on='image')
 del x, x_train, x_test; gc.collect()
 
+#==============================================================================
+# image features v2 by Qifeng
+#==============================================================================
+print('adding image features v2 ...')
+with open('../input/train_image_features_cspace_v2.p','rb') as f:
+    x = pickle.load(f)
+
+x_train = pd.DataFrame(x, columns = ['average_LAB_Ls',\
+                                     'average_LAB_As',\
+                                     'average_LAB_Bs',\
+                                     'average_YCrCb_Ys',\
+                                     'average_YCrCb_Crs',\
+                                     'average_YCrCb_Cbs',\
+                                     'ids'
+                                     ])
+#x_train.rename(columns = {'$ids':'image'}, inplace = True)
+
+with open('../input/test_image_features_cspace_v2.p','rb') as f:
+    x = pickle.load(f)
+
+x_test = pd.DataFrame(x, columns = ['average_LAB_Ls',\
+                                     'average_LAB_As',\
+                                     'average_LAB_Bs',\
+                                     'average_YCrCb_Ys',\
+                                     'average_YCrCb_Crs',\
+                                     'average_YCrCb_Cbs',\
+                                     'ids'
+                                     ])
+#x_test.rename(columns = {'$ids':'image'}, inplace = True)
+
+train_df = train_df.join(x_train.set_index('ids'), on='image')
+test_df = test_df.join(x_test.set_index('ids'), on='image')
+del x, x_train, x_test; gc.collect()
+
 # =============================================================================
 # add geo info: https://www.kaggle.com/frankherfert/avito-russian-region-cities/data
 # =============================================================================
@@ -364,7 +400,7 @@ all_samples.drop_duplicates(["item_id"], inplace=True)
 del train_active, test_active; gc.collect()
 
 all_periods = pd.concat([train_periods,test_periods])
-del train_periods, test_periods; gc.collect()
+
 
 all_periods["days_up"] = (all_periods["date_to"] - all_periods["date_from"]).dt.days
 gp = all_periods.groupby(["item_id"])[["days_up"]]
@@ -387,14 +423,41 @@ n_user_items = all_samples.groupby(["user_id"])[["item_id"]].count().reset_index
 .rename(index=str, columns={"item_id": "n_user_items"})
 gp = gp.merge(n_user_items, on="user_id", how="outer") #left
 
-del all_samples, all_periods, n_user_items
+del all_samples, all_periods, n_user_items, gp_df
 gc.collect()
 
 train_df = train_df.merge(gp, on="user_id", how="left")
 test_df = test_df.merge(gp, on="user_id", how="left")
 
+#==============================================================================
+# ranked price by Qifeng
+#==============================================================================
+#TODO
+print('adding ranked price..')
+train_df["image_top_1"].fillna(-1,inplace=True)
+train_df["price"].fillna(-1,inplace=True)
+train_df["param_2"].fillna(-1,inplace=True)
+train_df["city"].fillna("nicapotato",inplace=True)
+
+test_df["image_top_1"].fillna(-1,inplace=True)
+test_df["price"].fillna(-1,inplace=True)
+test_df["param_2"].fillna(-1,inplace=True)
+test_df["city"].fillna("nicapotato",inplace=True)
+
+train_df.reset_index()
+test_df.reset_index()
+
+train_df['price_rank_img'] = train_df.groupby('image_top_1')['price'].rank('dense', ascending=False)
+train_df['price_rank_p2'] = train_df.groupby('param_2')['price'].rank('dense', ascending=False)
+train_df['price_rank_city'] = train_df.groupby('city')['price'].rank('dense', ascending=False)
+
+test_df['price_rank_img'] = test_df.groupby('image_top_1')['price'].rank('dense', ascending=False)
+test_df['price_rank_p2'] = test_df.groupby('param_2')['price'].rank('dense', ascending=False)
+test_df['price_rank_city'] = test_df.groupby('city')['price'].rank('dense', ascending=False)
+#===============================================================================
 agg_cols = list(gp.columns)[1:]
 
+del train_periods, test_periods; gc.collect()
 del gp; gc.collect()
 
 for col in agg_cols:
@@ -402,11 +465,11 @@ for col in agg_cols:
     test_df[col].fillna(-1, inplace=True)
 
 print("merging supplimentary data done!")
-
-
-# =============================================================================
-# done! go to the normal steps
-# =============================================================================
+#
+#
+## =============================================================================
+## done! go to the normal steps
+## =============================================================================
 def rmse(predictions, targets):
     print("calculating RMSE ...")
     return np.sqrt(((predictions - targets) ** 2).mean())
@@ -445,9 +508,8 @@ def feature_engineering(df):
     def Do_Datetime(df):
         print("feature engineering -> date time ...")
         df["wday"] = df["activation_date"].dt.weekday
+        df["wday"].fillna(-1,inplace=True)
         df["wday"] =df["wday"].astype(np.uint8)
-        df["doy"] = df["activation_date"].dt.dayofyear
-        df["doy"] =df["doy"].astype(np.uint8)
         
     def Do_Label_Enc(df):
         print("feature engineering -> label encoding ...")
@@ -475,6 +537,8 @@ def feature_engineering(df):
         # price vs income
 #        df["price_vs_city_income"] = df["price"] / df["income"]
 #        df["price_vs_city_income"].fillna(-1, inplace=True)
+        df["income"].fillna(-1,inplace=True)
+        df["item_seq_number"].fillna(-1,inplace=True)
         
     def Do_Count(df):  
         print("feature engineering -> do count ...")
@@ -677,33 +741,8 @@ def feature_Eng_On_Deal_Prob(df, df_train):
     df = pd.merge(df, tmp, how='left', on=["item_seq_number+"])
     df2['median_deal_probability_item_seq_number+'] = df['median_deal_probability_item_seq_number+']
     df2['median_deal_probability_item_seq_number+'] =df2['median_deal_probability_item_seq_number+'].astype(np.float32)
-    del tmp; gc.collect()
-    
+    del tmp; gc.collect()      
     return df2
-
-
-def feature_Eng_On_Item_count(df):
-    print('feature engineering -> on price deal prob +...')
-    df2 = df
-       
-    # mean rmse is: 0.24258788699867934 (lgb)
-    # RMSE: 0.2444542999684442
-    tmp = df.groupby(["doy", "image_top_1"], as_index=False)['item_id'].count().rename(columns={'item_id':'count_item_id_doy_image_top_1'})     
-    df = pd.merge(df, tmp, how='left', on=["doy", "image_top_1"])
-#    df2['count_item_id_doy_image_top_1'] = df['count_item_id_doy_image_top_1'].fillna(-1)
-#    df2['count_item_id_doy_image_top_1'] =df2['count_item_id_doy_image_top_1']
-    del tmp; gc.collect()
-    
-    tmp = df.groupby(["doy", "price+"], as_index=False)['item_id'].count().rename(columns={'item_id':'count_item_id_doy_price_p'})     
-    df = pd.merge(df, tmp, how='left', on=["doy", "price+"])
-#    df2['count_item_id_doy_price_p'] = df['count_item_id_doy_price_p'].fillna(-1)
-#    df2['count_item_id_doy_price_p'] = df2['count_item_id_doy_price_p']
-    del tmp; gc.collect() 
-   
-    df2["cat_p_cat"] = df2["category_name"]*df2["parent_category_name"]
-        
-    return df2
-
 
 del train_df, test_df; gc.collect()
 
@@ -712,8 +751,6 @@ del train_df, test_df; gc.collect()
 # use additianl image data
 # =============================================================================
 feature_engineering(full_df)
-feature_Eng_On_Price_Make_More_Cat(full_df)
-feature_Eng_On_Item_count(full_df)
 
 # 内存优化
 full_df["average_blues"] = full_df["average_blues"].astype(np.float32)
@@ -759,10 +796,10 @@ gc.collect()
 
 
 from sklearn.model_selection import KFold
-kf2 = KFold(n_splits=5, random_state=42, shuffle=True)
+kf2 = KFold(n_splits=10, random_state=42, shuffle=True)
 numIter = 0
 rmse_sume = 0.
-numLimit = 5
+numLimit = 2
 
 tmp = pd.DataFrame(full_df)
 full_df_COPY = pd.DataFrame(tmp)
@@ -782,7 +819,6 @@ for train_index, valid_index in kf2.split(y):
                         
             # 不考虑使用均值
             try:
-                  
                   full_df.drop('median_deal_probability_price+', axis=1, inplace=True); gc.collect()
                   train_df.drop('median_deal_probability_price+', axis=1, inplace=True); gc.collect()
                   full_df.drop('median_deal_probability_param_2', axis=1, inplace=True); gc.collect()
@@ -792,7 +828,7 @@ for train_index, valid_index in kf2.split(y):
             except:
                   pass                  
             
-
+            feature_Eng_On_Price_Make_More_Cat(full_df)
             feature_Eng_On_Price_Make_More_Cat(train_df)
             feature_Eng_On_Deal_Prob(full_df, train_df)
                         
@@ -821,25 +857,25 @@ for train_index, valid_index in kf2.split(y):
             NFOLDS = 10#5
             SEED = 42
             kf = KFold(len_train, n_folds=NFOLDS, shuffle=True, random_state=SEED)
-            
-            # SGD
-            from sklearn.linear_model import SGDRegressor
-            sgdregressor_params = {'alpha':0.0001, 'random_state':SEED, 'tol':1e-3}
-            sgd = SklearnWrapper(clf=SGDRegressor, seed = SEED, params = sgdregressor_params)
-            FULL_DF = pd.DataFrame(full_df)
-            FULL_DF.drop(["item_id"], axis=1, inplace=True)
-            tmp1 = pd.DataFrame(full_df)
-            tmp1.drop(["item_id"], axis=1, inplace=True)
-            print('sgd 1 oof ...')
-            sgd_oof_train, sgd_oof_test = get_oof(sgd, np.array(FULL_DF)[:len_train], y, np.array(FULL_DF)[len_train:])
-            sgd_preds = np.concatenate([sgd_oof_train, sgd_oof_test])
-            tmp1['sgd_preds_1'] = sgd_preds.astype(np.float32)
-            tmp1['sgd_preds_1'].clip(0.0, 1.0, inplace=True)
-            print('sgd 2 oof ...')
-            sgd_oof_train, sgd_oof_test = get_oof(sgd, ready_df[:len_train], y, ready_df[len_train:])
-            sgd_preds = np.concatenate([sgd_oof_train, sgd_oof_test])
-            tmp1['sgd_preds_2'] = sgd_preds.astype(np.float32)
-            tmp1['sgd_preds_2'].clip(0.0, 1.0, inplace=True)
+
+#            # SGD
+#            from sklearn.linear_model import SGDRegressor
+#            sgdregressor_params = {'alpha':0.0001, 'random_state':SEED, 'tol':1e-3}
+#            sgd = SklearnWrapper(clf=SGDRegressor, seed = SEED, params = sgdregressor_params)
+#            FULL_DF = pd.DataFrame(full_df)
+#            FULL_DF.drop(["item_id"], axis=1, inplace=True)
+#            tmp1 = pd.DataFrame(full_df)
+#            tmp1.drop(["item_id"], axis=1, inplace=True)
+#            print('sgd 1 oof ...')
+#            sgd_oof_train, sgd_oof_test = get_oof(sgd, np.array(FULL_DF)[:len_train], y, np.array(FULL_DF)[len_train:])
+#            sgd_preds = np.concatenate([sgd_oof_train, sgd_oof_test])
+#            tmp1['sgd_preds_1'] = sgd_preds.astype(np.float32)
+#            tmp1['sgd_preds_1'].clip(0.0, 1.0, inplace=True)
+#            print('sgd 2 oof ...')
+#            sgd_oof_train, sgd_oof_test = get_oof(sgd, ready_df[:len_train], y, ready_df[len_train:])
+#            sgd_preds = np.concatenate([sgd_oof_train, sgd_oof_test])
+#            tmp1['sgd_preds_2'] = sgd_preds.astype(np.float32)
+#            tmp1['sgd_preds_2'].clip(0.0, 1.0, inplace=True)
 
             # Ridge
             #'alpha':20.0
@@ -882,8 +918,8 @@ for train_index, valid_index in kf2.split(y):
             tmp3['ridge_preds_2a'].clip(0.0, 1.0, inplace=True)
                         
             # 融入oof结果
-            full_df['sgd_preds_1'] = tmp1['sgd_preds_1'].astype(np.float32)
-            full_df['sgd_preds_2'] = tmp1['sgd_preds_2'].astype(np.float32)
+#            full_df['sgd_preds_1'] = tmp1['sgd_preds_1'].astype(np.float32)
+#            full_df['sgd_preds_2'] = tmp1['sgd_preds_2'].astype(np.float32)
             
             full_df['ridge_preds_1'] = tmp2['ridge_preds_1'].astype(np.float32)
             full_df['ridge_preds_2'] = tmp2['ridge_preds_2'].astype(np.float32)
@@ -891,8 +927,8 @@ for train_index, valid_index in kf2.split(y):
             full_df['ridge_preds_1a'] = tmp3['ridge_preds_1a'].astype(np.float32)
             full_df['ridge_preds_2a'] = tmp3['ridge_preds_2a'].astype(np.float32)
             
-            del tmp1, tmp2, tmp3
-            del ridge_oof_train, ridge_oof_test, ridge_preds, ridge, sgd_oof_test, sgd_oof_train, sgd_preds, ready_df
+            del tmp2, tmp3
+            del ridge_oof_train, ridge_oof_test, ridge_preds, ridge, ready_df
             gc.collect()
                         
 
@@ -905,7 +941,7 @@ for train_index, valid_index in kf2.split(y):
             tfvocab = full_df.columns.tolist() + tfvocab
             X_test_full=full_df.iloc[len_train:]
             X_test_ready=ready_full_df[len_train:]
-#            del ready_full_df, full_df
+            del ready_full_df, full_df
             gc.collect()
                         
             print("Feature Names Length: ",len(tfvocab))
@@ -935,7 +971,7 @@ for train_index, valid_index in kf2.split(y):
 #                    "gpu_platform_id":-1,
 #                    "gpu_device_id":-1,
                     "tree_learner": "feature",    
-                    "num_threads": 3,
+                    "num_threads": 11,
                     "task": "train",
                     "boosting_type": "gbdt",
                     "objective": "regression",
@@ -955,7 +991,6 @@ for train_index, valid_index in kf2.split(y):
             lgvalid = lgb.Dataset(X_valid, y_valid,
                             feature_name=tfvocab,
                             categorical_feature = cat_col)
-            
             lgb_clf = lgb.train(
                     lgbm_params,
                     lgtrain,
@@ -1002,130 +1037,92 @@ print("All Done.")
 
 
 """
-(test)
-[100]   train's rmse: 0.224045  valid's rmse: 0.226562
-[200]   train's rmse: 0.216024  valid's rmse: 0.220959
-[300]   train's rmse: 0.21133   valid's rmse: 0.218768
-[400]   train's rmse: 0.207699  valid's rmse: 0.217566
-[500]   train's rmse: 0.204585  valid's rmse: 0.216779
-[600]   train's rmse: 0.201997  valid's rmse: 0.216272
-[700]   train's rmse: 0.199639  valid's rmse: 0.215843
-[800]   train's rmse: 0.197377  valid's rmse: 0.215522
-[900]   train's rmse: 0.19535   valid's rmse: 0.215296
-[1000]  train's rmse: 0.193363  valid's rmse: 0.215117
-[1100]  train's rmse: 0.191614  valid's rmse: 0.214973
-[1200]  train's rmse: 0.189928  valid's rmse: 0.214881
-[1300]  train's rmse: 0.188371  valid's rmse: 0.214773
-[1400]  train's rmse: 0.186788  valid's rmse: 0.214696
-[1500]  train's rmse: 0.185321  valid's rmse: 0.214623
-[1600]  train's rmse: 0.183973  valid's rmse: 0.21458
-[1700]  train's rmse: 0.182654  valid's rmse: 0.214543
-[1800]  train's rmse: 0.181369  valid's rmse: 0.214501
-[1900]  train's rmse: 0.180164  valid's rmse: 0.214472
-[2000]  train's rmse: 0.178963  valid's rmse: 0.214448
-[2100]  train's rmse: 0.177834  valid's rmse: 0.214418
-[2200]  train's rmse: 0.176751  valid's rmse: 0.214396
-[2300]  train's rmse: 0.175703  valid's rmse: 0.214379
-[2400]  train's rmse: 0.174665  valid's rmse: 0.21437
-[2500]  train's rmse: 0.173651  valid's rmse: 0.214359
-[2600]  train's rmse: 0.172736  valid's rmse: 0.214352
-[2700]  train's rmse: 0.171808  valid's rmse: 0.214338
-[2800]  train's rmse: 0.170843  valid's rmse: 0.214317
-[2900]  train's rmse: 0.169903  valid's rmse: 0.214308
-[3000]  train's rmse: 0.169051  valid's rmse: 0.214301
-[3100]  train's rmse: 0.168158  valid's rmse: 0.2143
-[3200]  train's rmse: 0.167266  valid's rmse: 0.214287
-[3300]  train's rmse: 0.166451  valid's rmse: 0.21428
-[3400]  train's rmse: 0.165636  valid's rmse: 0.214282
-[3500]  train's rmse: 0.164841  valid's rmse: 0.214286
+[100]   train's rmse: 0.224287  valid's rmse: 0.226784
+[200]   train's rmse: 0.215942  valid's rmse: 0.220919
+[300]   train's rmse: 0.211367  valid's rmse: 0.218685
+[400]   train's rmse: 0.207791  valid's rmse: 0.21742
+[500]   train's rmse: 0.204988  valid's rmse: 0.216685
+[600]   train's rmse: 0.202394  valid's rmse: 0.216128
+[700]   train's rmse: 0.200003  valid's rmse: 0.21572
+[800]   train's rmse: 0.197772  valid's rmse: 0.215398
+[900]   train's rmse: 0.195805  valid's rmse: 0.21517
+[1000]  train's rmse: 0.193919  valid's rmse: 0.214992
+[1100]  train's rmse: 0.192108  valid's rmse: 0.21482
+[1200]  train's rmse: 0.190425  valid's rmse: 0.214702
+[1300]  train's rmse: 0.188824  valid's rmse: 0.214601
+[1400]  train's rmse: 0.18735   valid's rmse: 0.214528
+[1500]  train's rmse: 0.185847  valid's rmse: 0.214461
+[1600]  train's rmse: 0.184483  valid's rmse: 0.214416
+[1700]  train's rmse: 0.18309   valid's rmse: 0.214357
+[1800]  train's rmse: 0.181807  valid's rmse: 0.214319
+[1900]  train's rmse: 0.180638  valid's rmse: 0.214299
+[2000]  train's rmse: 0.179395  valid's rmse: 0.214274
+[2100]  train's rmse: 0.178304  valid's rmse: 0.214257
+[2200]  train's rmse: 0.177144  valid's rmse: 0.214214
+[2300]  train's rmse: 0.176103  valid's rmse: 0.214209
+[2400]  train's rmse: 0.175016  valid's rmse: 0.214194
+[2500]  train's rmse: 0.174032  valid's rmse: 0.214186
+[2600]  train's rmse: 0.173103  valid's rmse: 0.214186
+[2700]  train's rmse: 0.172152  valid's rmse: 0.214187
+[2800]  train's rmse: 0.171205  valid's rmse: 0.214179
+[2900]  train's rmse: 0.170241  valid's rmse: 0.214169
+[3000]  train's rmse: 0.169385  valid's rmse: 0.214169
+[3100]  train's rmse: 0.168455  valid's rmse: 0.214163
+[3200]  train's rmse: 0.167504  valid's rmse: 0.214162
+[3300]  train's rmse: 0.166622  valid's rmse: 0.214163
+[3400]  train's rmse: 0.165763  valid's rmse: 0.21416
+[3500]  train's rmse: 0.164916  valid's rmse: 0.214162
 Early stopping, best iteration is:
-[3317]  train's rmse: 0.166291  valid's rmse: 0.214279
-
-
-
-[100]   train's rmse: 0.225319  valid's rmse: 0.227587
-[200]   train's rmse: 0.216781  valid's rmse: 0.221473
-[300]   train's rmse: 0.212228  valid's rmse: 0.219283
-[400]   train's rmse: 0.208614  valid's rmse: 0.218002
-[500]   train's rmse: 0.205568  valid's rmse: 0.217158
-[600]   train's rmse: 0.203035  valid's rmse: 0.216592
-[700]   train's rmse: 0.200543  valid's rmse: 0.216153
-[800]   train's rmse: 0.198402  valid's rmse: 0.215871
-[900]   train's rmse: 0.196333  valid's rmse: 0.215609
-[1000]  train's rmse: 0.194439  valid's rmse: 0.215434
-[1100]  train's rmse: 0.1926    valid's rmse: 0.215294
-[1200]  train's rmse: 0.190889  valid's rmse: 0.215184
-[1300]  train's rmse: 0.189277  valid's rmse: 0.215118
-[1400]  train's rmse: 0.187809  valid's rmse: 0.215061
-[1500]  train's rmse: 0.186371  valid's rmse: 0.215005
-[1600]  train's rmse: 0.184991  valid's rmse: 0.214946
-[1700]  train's rmse: 0.183598  valid's rmse: 0.214905
-[1800]  train's rmse: 0.182244  valid's rmse: 0.214872
-[1900]  train's rmse: 0.180993  valid's rmse: 0.214845
-[2000]  train's rmse: 0.179789  valid's rmse: 0.214832
-[2100]  train's rmse: 0.178642  valid's rmse: 0.214833
-[2200]  train's rmse: 0.177541  valid's rmse: 0.214813
-[2300]  train's rmse: 0.176456  valid's rmse: 0.214779
-[2400]  train's rmse: 0.175414  valid's rmse: 0.214761
-[2500]  train's rmse: 0.174438  valid's rmse: 0.214738
-[2600]  train's rmse: 0.173494  valid's rmse: 0.214728
-[2700]  train's rmse: 0.17259   valid's rmse: 0.214719
-[2800]  train's rmse: 0.171668  valid's rmse: 0.214718
-[2900]  train's rmse: 0.170743  valid's rmse: 0.214714
-[3000]  train's rmse: 0.16985   valid's rmse: 0.214707
-[3100]  train's rmse: 0.169026  valid's rmse: 0.214701
-[3200]  train's rmse: 0.168146  valid's rmse: 0.214684
-[3300]  train's rmse: 0.167339  valid's rmse: 0.214677
-[3400]  train's rmse: 0.166494  valid's rmse: 0.214685
-Early stopping, best iteration is:
-[3244]  train's rmse: 0.167777  valid's rmse: 0.214673
+[3372]  train's rmse: 0.165991  valid's rmse: 0.214157
 save model ...
 Model Evaluation Stage
 calculating RMSE ...
-RMSE: 0.21467256607424468
+RMSE: 0.21415702473160395
 
-calculating RMSE ...
-training in fold 2
-Modeling Stage ...
-Training until validation scores don't improve for 200 rounds.
-[100]   train's rmse: 0.224584  valid's rmse: 0.226573
-[200]   train's rmse: 0.21663   valid's rmse: 0.221173
-[300]   train's rmse: 0.212054  valid's rmse: 0.218924
-[400]   train's rmse: 0.208659  valid's rmse: 0.21754
-[500]   train's rmse: 0.205683  valid's rmse: 0.216717
-[600]   train's rmse: 0.203098  valid's rmse: 0.216138
-[700]   train's rmse: 0.20075   valid's rmse: 0.21565
-[800]   train's rmse: 0.198486  valid's rmse: 0.215285
-[900]   train's rmse: 0.196409  valid's rmse: 0.215011
-[1000]  train's rmse: 0.194553  valid's rmse: 0.214818
-[1100]  train's rmse: 0.192716  valid's rmse: 0.214652
-[1200]  train's rmse: 0.190952  valid's rmse: 0.214545
-[1300]  train's rmse: 0.189312  valid's rmse: 0.214432
-[1400]  train's rmse: 0.187826  valid's rmse: 0.214345
-[1500]  train's rmse: 0.186349  valid's rmse: 0.214291
-[1600]  train's rmse: 0.184924  valid's rmse: 0.214254
-[1700]  train's rmse: 0.183661  valid's rmse: 0.214223
-[1800]  train's rmse: 0.182386  valid's rmse: 0.214203
-[1900]  train's rmse: 0.181181  valid's rmse: 0.214174
-[2000]  train's rmse: 0.179975  valid's rmse: 0.214142
-[2100]  train's rmse: 0.178874  valid's rmse: 0.21412
-[2200]  train's rmse: 0.177713  valid's rmse: 0.214107
-[2300]  train's rmse: 0.17663   valid's rmse: 0.214091
-[2400]  train's rmse: 0.175612  valid's rmse: 0.214072
-[2500]  train's rmse: 0.174632  valid's rmse: 0.214072
-[2600]  train's rmse: 0.173608  valid's rmse: 0.214065
-[2700]  train's rmse: 0.172698  valid's rmse: 0.214062
-[2800]  train's rmse: 0.171783  valid's rmse: 0.214062
-[2900]  train's rmse: 0.170862  valid's rmse: 0.21406
-[3000]  train's rmse: 0.170011  valid's rmse: 0.214053
-[3100]  train's rmse: 0.169159  valid's rmse: 0.214059
-[3200]  train's rmse: 0.168311  valid's rmse: 0.214062
+[100]   train's rmse: 0.224194  valid's rmse: 0.226212
+[200]   train's rmse: 0.216386  valid's rmse: 0.221002
+[300]   train's rmse: 0.211897  valid's rmse: 0.218786
+[400]   train's rmse: 0.208266  valid's rmse: 0.217409
+[500]   train's rmse: 0.205304  valid's rmse: 0.216553
+[600]   train's rmse: 0.202488  valid's rmse: 0.215911
+[700]   train's rmse: 0.200101  valid's rmse: 0.215494
+[800]   train's rmse: 0.197923  valid's rmse: 0.21518
+[900]   train's rmse: 0.195967  valid's rmse: 0.214926
+[1000]  train's rmse: 0.19407   valid's rmse: 0.214719
+[1100]  train's rmse: 0.192387  valid's rmse: 0.214605
+[1200]  train's rmse: 0.190673  valid's rmse: 0.214469
+[1300]  train's rmse: 0.189063  valid's rmse: 0.214391
+[1400]  train's rmse: 0.187486  valid's rmse: 0.214298
+[1500]  train's rmse: 0.185999  valid's rmse: 0.214193
+[1600]  train's rmse: 0.18474   valid's rmse: 0.214153
+[1700]  train's rmse: 0.183476  valid's rmse: 0.214114
+[1800]  train's rmse: 0.182215  valid's rmse: 0.21406
+[1900]  train's rmse: 0.181066  valid's rmse: 0.21403
+[2000]  train's rmse: 0.17996   valid's rmse: 0.214007
+[2100]  train's rmse: 0.178805  valid's rmse: 0.213972
+[2200]  train's rmse: 0.177769  valid's rmse: 0.213955
+[2300]  train's rmse: 0.176744  valid's rmse: 0.213942
+[2400]  train's rmse: 0.175706  valid's rmse: 0.213925
+[2500]  train's rmse: 0.174681  valid's rmse: 0.213902
+[2600]  train's rmse: 0.173647  valid's rmse: 0.213879
+[2700]  train's rmse: 0.172723  valid's rmse: 0.21387
+[2800]  train's rmse: 0.171756  valid's rmse: 0.213847
+[2900]  train's rmse: 0.170802  valid's rmse: 0.21384
+[3000]  train's rmse: 0.16993   valid's rmse: 0.213835
+[3100]  train's rmse: 0.16901   valid's rmse: 0.21383
+[3200]  train's rmse: 0.168097  valid's rmse: 0.213827
+[3300]  train's rmse: 0.167216  valid's rmse: 0.21382
+[3400]  train's rmse: 0.166333  valid's rmse: 0.213822
+[3500]  train's rmse: 0.165399  valid's rmse: 0.213814
+[3600]  train's rmse: 0.164515  valid's rmse: 0.213821
 Early stopping, best iteration is:
-[3029]  train's rmse: 0.169765  valid's rmse: 0.214051
+[3488]  train's rmse: 0.165528  valid's rmse: 0.213812
 save model ...
 Model Evaluation Stage
 calculating RMSE ...
-RMSE: 0.21405066855179888
+RMSE: 0.2138117158974607
+/home/qifeng/anaconda3/lib/python3.6/site-packages/lightgbm/basic.py:447: UserWarning: Converting data to scipy sparse matrix.
+  warnings.warn('Converting data to scipy sparse matrix.')
 calculating RMSE ...
 training in fold 3
 training in fold 4
@@ -1135,64 +1132,59 @@ training in fold 7
 training in fold 8
 training in fold 9
 training in fold 10
-mean rmse is: 0.21436161731302178
+mean rmse is: 0.21398437031453232
 Features importance...
-                               feature       gain  split
-13                         image_top_1  11.936618  89246
-68                       ridge_preds_2   8.394325  20879
-8                                 city   6.168863  76198
-17                             param_1   6.156261  32437
-7                        category_name   5.601058  18024
-67                       ridge_preds_1   3.376310  20287
-18                             param_2   3.195307  17448
-20                parent_category_name   2.121094   4217
-65                              price+   1.964126  20488
-16                        n_user_items   1.884413  14190
-19                             param_3   1.866375  17733
-22                               price   1.756159  19376
-23                              region   1.593146  35508
-4                     avg_days_up_user   1.111384  15647
-24                             user_id   1.002529  12751
-15                     item_seq_number   0.764631  18375
-5                    avg_times_up_user   0.643270  11443
-0                        average_blues   0.591781  16710
-66                    item_seq_number+   0.585969   6494
-3                         average_reds   0.581833  16502
-1                       average_greens   0.558866  15964
-21                          population   0.546603  14724
-57               description_num_chars   0.473153  14454
-6                          blurinesses   0.468096  16982
-2                  average_pixel_width   0.445799  16228
-43651             text_feature__одежда   0.435206    370
-58               description_num_words   0.429626  11371
-49              text_feature_num_chars   0.412445   6619
-12                       image_quality   0.400337  16549
-11                               image   0.383210  16071
-27                              widths   0.369020   8344
-55     text_feature_2_num_unique_words   0.350646   1384
-25                           user_type   0.350333   2221
-59        description_num_unique_words   0.342265  10217
-28                      num_desc_punct   0.341784   9153
-61                     title_num_chars   0.336563  11496
-54            text_feature_2_num_words   0.311537   1070
-33339           description__состоянии   0.299048   5860
-9                           dullnesses   0.249431   8615
-60         description_words_vs_unique   0.242027   8732
-26                         whitenesses   0.240906   7796
-14                              income   0.240634   9397
-27954              description__продам   0.206935   5148
-41576         text_feature__nicapotato   0.200321    729
-51       text_feature_num_unique_words   0.186407   2467
-53            text_feature_2_num_chars   0.177795   2679
-50              text_feature_num_words   0.165370   2258
-52        text_feature_words_vs_unique   0.163689   2588
-43738          text_feature__перевозки   0.160041    159
-62                     title_num_words   0.159509   4947
+                             feature       gain  split
+104                    ridge_preds_2  12.773476  19889
+44                       image_top_1  10.971517  88279
+103                    ridge_preds_1   6.950888  21230
+39                              city   5.055901  68388
+48                           param_1   4.259768  34110
+49                           param_2   2.700232  18914
+38                     category_name   2.540599  17555
+47                      n_user_items   2.241311  15263
+53                             price   2.188239  21966
+54                            region   1.695646  39244
+51              parent_category_name   1.489810   4015
+50                           param_3   1.264952  17708
+55                           user_id   0.869296  12664
+101  median_deal_probability_param_2   0.866860   2332
+105                   ridge_preds_1a   0.794409  17529
+19                    average_LAB_As   0.734307  17769
+35                  avg_days_up_user   0.727771  16830
+36                 avg_times_up_user   0.697693  12511
+80            text_feature_num_chars   0.639440   7094
+52                        population   0.620826  18542
+46                   item_seq_number   0.536099  18162
+82     text_feature_num_unique_words   0.485907   2687
+97                  item_seq_number+   0.476807   6846
+23                    average_LUV_Us   0.441738  15365
+37                       blurinesses   0.436873  18042
+96                            price+   0.395411   2651
+88             description_num_chars   0.391752  15813
+33               average_pixel_width   0.377858  17054
+14                    average_HLS_Hs   0.374656  17294
+16                    average_HLS_Ss   0.373272  16551
+26                 average_YCrCb_Crs   0.371275  13992
+31                     average_blues   0.360050  14651
+17                    average_HSV_Ss   0.357289  15140
+18                    average_HSV_Vs   0.349322  13772
+29                    average_YUV_Vs   0.345432  15252
+85          text_feature_2_num_words   0.345344    985
+92                   title_num_chars   0.345142  13681
+42                             image   0.344679  17772
+43                     image_quality   0.342040  16600
+89             description_num_words   0.340504  11975
+27                  average_YCrCb_Ys   0.320716  11618
+34                      average_reds   0.320075  13703
+24                    average_LUV_Vs   0.317274  13307
+20                    average_LAB_Bs   0.316370  14094
+15                    average_HLS_Ls   0.313417  12379
+56                         user_type   0.312490   2835
+28                    average_YUV_Us   0.310682  13644
+21                    average_LAB_Ls   0.293948  12749
+25                 average_YCrCb_Cbs   0.290696  12833
+58                            widths   0.284579   8265
 All Done.
-
-correlation between models outputs
-         dp1      dp2
-dp1  1.00000  0.98581
-dp2  0.98581  1.00000
 
 """
