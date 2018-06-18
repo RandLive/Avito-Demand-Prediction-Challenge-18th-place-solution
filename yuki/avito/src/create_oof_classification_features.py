@@ -69,29 +69,29 @@ del training, testing
 gc.collect()
 print('\nAll Data shape: {} Rows, {} Columns'.format(*df.shape))
 # Categorical OOF
-cate_cols = ["parent_category_name","category_name", "user_type","image_top_1", "param_1", "param_2", "param_3", "city", "region"]
-for col in cate_cols:
-    print("Creating features {}...".format(col))
-    df_target = df[col].astype(str).fillna("NAN").values
-    lbl = preprocessing.LabelEncoder()
-    ohe = preprocessing.OneHotEncoder(sparse=True)
-    vecs = ohe.fit_transform(lbl.fit_transform(df_target).reshape(df_target.shape[0], 1))
-    if col=="parent_category_name":
-        all_vecs = vecs
-    else:
-        all_vecs = hstack([all_vecs, vecs])
-
-all_vecs = all_vecs.tocsr()
-oof_lgbm_classify(all_vecs[:ntrain,:],all_vecs[ntrain:,:],y_bin,"categorical_ohe_bin_classify_{}".format("all_categories"))
-oof_lgbm_classify(all_vecs[:ntrain,:],all_vecs[ntrain:,:],y_high,"categorical_ohe_high_classify_{}".format("all_categories"))
+# cate_cols = ["parent_category_name","category_name", "user_type","image_top_1", "param_1", "param_2", "param_3", "city", "region"]
+# for col in cate_cols:
+#     print("Creating features {}...".format(col))
+#     df_target = df[col].astype(str).fillna("NAN").values
+#     lbl = preprocessing.LabelEncoder()
+#     ohe = preprocessing.OneHotEncoder(sparse=True)
+#     vecs = ohe.fit_transform(lbl.fit_transform(df_target).reshape(df_target.shape[0], 1))
+#     if col=="parent_category_name":
+#         all_vecs = vecs
+#     else:
+#         all_vecs = hstack([all_vecs, vecs])
+#
+# all_vecs = all_vecs.tocsr()
+# oof_lgbm_classify(all_vecs[:ntrain,:],all_vecs[ntrain:,:],y_bin,"categorical_ohe_bin_classify_{}".format("all_categories"))
+# oof_lgbm_classify(all_vecs[:ntrain,:],all_vecs[ntrain:,:],y_high,"categorical_ohe_high_classify_{}".format("all_categories"))
 
 # NLP OOF
-textcols = ["text_all", "title"]# "description"
+textcols = ["text_all"]# "description"
 train = pd.read_csv('../input/train_stemmed.csv')
 test = pd.read_csv('../input/test_stemmed.csv')
 df = pd.concat([train,test],axis=0)
 del train, test;gc.collect()
-df["text_all"] = df.description.fillna("") + " "  + df.title.fillna("")
+df["text_all"] = df.description.fillna("") + " "  + df.title.fillna("") + " " + df.param_2.fillna("")
 for col in textcols:
     print("Creating features {}...".format(col))
     df_target = df[[col]].fillna("")
@@ -116,118 +116,118 @@ for col in textcols:
     del vecs; gc.collect()
 
 
-# Fasttextmodel
-# input file for fasttext(without stopwords, punctuations)
-# f = open("../tmp/text_for_fasttext_stemmed.txt", "w")
-# for text in df["text_all"].values:
-#     text = text.lower()
-#     t = ' '.join([t for t in text.split() if t not in russian_stop and t not in punctuations and '\n' != t and " " != t])
-#     t = [s for s in t if "\n" != s and '"' != s]
-#     text = "".join(t)
-#     text = re.sub(r"^\s+","",text)
-#     f.write("".join(text))
-#     f.write("\n")
-# f.close()
+# # Fasttextmodel
+# # input file for fasttext(without stopwords, punctuations)
+# # f = open("../tmp/text_for_fasttext_stemmed.txt", "w")
+# # for text in df["text_all"].values:
+# #     text = text.lower()
+# #     t = ' '.join([t for t in text.split() if t not in russian_stop and t not in punctuations and '\n' != t and " " != t])
+# #     t = [s for s in t if "\n" != s and '"' != s]
+# #     text = "".join(t)
+# #     text = re.sub(r"^\s+","",text)
+# #     f.write("".join(text))
+# #     f.write("\n")
+# # f.close()
+# #
+# # os.system("fasttext skipgram -input ../tmp/text_for_fasttext_stemmed.txt -output ../model/fasttext_model_stemmed -dim 100 -minCount 1")
+# # create sentence vectors
+# import fastText
+# text = df["text_all"].values[:ntrain+ntest]
+# model = fastText.load_model("../model/fasttext_model_stemmed.bin")
+# sentence = np.zeros((text.shape[0], 100))
+# for i, t in enumerate(text):
+#     s = " ".join(t).replace("\n", " ")
+#     sentence[i, :] = model.get_sentence_vector(s)
 #
-# os.system("fasttext skipgram -input ../tmp/text_for_fasttext_stemmed.txt -output ../model/fasttext_model_stemmed -dim 100 -minCount 1")
-# create sentence vectors
-import fastText
-text = df["text_all"].values[:ntrain+ntest]
-model = fastText.load_model("../model/fasttext_model_stemmed.bin")
-sentence = np.zeros((text.shape[0], 100))
-for i, t in enumerate(text):
-    s = " ".join(t).replace("\n", " ")
-    sentence[i, :] = model.get_sentence_vector(s)
-
-oof_lgbm_classify(sentence[:ntrain,:],sentence[ntrain:,:],y_bin,"oof_bin_classify_sentencevector")
-oof_lgbm_classify(sentence[:ntrain,:],sentence[ntrain:,:],y_high,"oof_high_classify_sentencevector")
-
-
-
-def sent2vec(words, dim):
-    M = []
-    for w in words:
-        M.append(model.get_word_vector(w))
-    if len(M)==0:
-        return np.zeros(dim)
-    else:
-        M = np.array(M)
-    v = M.sum(axis=0)
-    return v / np.sqrt((v ** 2).sum())
-
-def sent2vec_min(words, dim):
-    M = []
-    for w in words:
-        M.append(model.get_word_vector(w))
-    M = np.array(M)
-    if len(M) != 0:
-        v = M.min(axis=0)
-    else:
-        return np.zeros(dim)
-    return v
-
-def sent2vec_max(words, dim):
-    M = []
-    for w in words:
-        M.append(model.get_word_vector(w))
-    M = np.array(M)
-    if len(M)!=0:
-        v = M.max(axis=0)
-    else:
-        return np.zeros(dim)
-    return v
-
-text = df["text_all"].apply(lambda x: x.split()).values
-train = text[:ntrain]
-test = text[ntrain:]
-del text; gc.collect()
-print("text...")
-
-train_vectors = np.array(Parallel(n_jobs=-1)([delayed(sent2vec)(s, 100) for s in train]))
-print("train load...")
-test_vectors = np.array(Parallel(n_jobs=-1)([delayed(sent2vec)(s, 100) for s in test]))
-print("test load...")
-oof_lgbm_classify(train_vectors,test_vectors,y_bin,"meanvectors_bin_classify_fasttext")
-oof_lgbm_classify(train_vectors,test_vectors,y_high,"meanvectors_high_classify_fasttext")
-
-train_vectors = np.array(Parallel(n_jobs=-1)([delayed(sent2vec_min)(s, 100) for s in train]))
-test_vectors = np.array(Parallel(n_jobs=-1)([delayed(sent2vec_min)(s, 100) for s in test]))
-oof_lgbm_classify(train_vectors,test_vectors,y_bin,"minvectors_bin_classify_fasttext")
-oof_lgbm_classify(train_vectors,test_vectors,y_high,"minvectors_high_classify_fasttext")
-
-train_vectors = np.array(Parallel(n_jobs=-1)([delayed(sent2vec_max)(s, 100) for s in train]))
-test_vectors = np.array(Parallel(n_jobs=-1)([delayed(sent2vec_max)(s, 100) for s in test]))
-oof_lgbm_classify(train_vectors,test_vectors,y_bin,"maxvectors_bin_classify_fasttext")
-oof_lgbm_classify(train_vectors,test_vectors,y_high,"maxvectors_high_classify_fasttext")
-
-model = gensim.models.KeyedVectors.load_word2vec_format("../model/wiki.ru.vec",binary=False)
-
-def word2vec_sentencevec(words, dim):
-    M = []
-    for w in words.split():
-        try:
-            M.append(model[w])
-        except:
-            M.append(np.zeros(dim))
-    if len(M)==0:
-        return np.zeros(dim)
-    else:
-        M = np.array(M)
-    v = M.sum(axis=0)
-    v = np.array(v)
-    return v / np.sqrt((v ** 2).sum())
-
-text = df["text_all"].values
-train = text[:ntrain]
-test = text[ntrain:]
-del text; gc.collect()
-print("text...")
-
-train_vectors = np.array(Parallel(n_jobs=2,verbose=2)([delayed(word2vec_sentencevec)(s, 300) for s in train]))
-print("train load...")
-del train; gc.collect()
-test_vectors = np.array(Parallel(n_jobs=2,verbose=2)([delayed(word2vec_sentencevec)(s, 300) for s in test]))
-print("test load...")
-del test; gc.collect()
-oof_lgbm_classify(train_vectors,test_vectors,y_bin,"stemmed_wordvector_bin")
-oof_lgbm_classify(train_vectors,test_vectors,y_high,"stemmed_wordvector_high")
+# oof_lgbm_classify(sentence[:ntrain,:],sentence[ntrain:,:],y_bin,"oof_bin_classify_sentencevector")
+# oof_lgbm_classify(sentence[:ntrain,:],sentence[ntrain:,:],y_high,"oof_high_classify_sentencevector")
+#
+#
+#
+# def sent2vec(words, dim):
+#     M = []
+#     for w in words:
+#         M.append(model.get_word_vector(w))
+#     if len(M)==0:
+#         return np.zeros(dim)
+#     else:
+#         M = np.array(M)
+#     v = M.sum(axis=0)
+#     return v / np.sqrt((v ** 2).sum())
+#
+# def sent2vec_min(words, dim):
+#     M = []
+#     for w in words:
+#         M.append(model.get_word_vector(w))
+#     M = np.array(M)
+#     if len(M) != 0:
+#         v = M.min(axis=0)
+#     else:
+#         return np.zeros(dim)
+#     return v
+#
+# def sent2vec_max(words, dim):
+#     M = []
+#     for w in words:
+#         M.append(model.get_word_vector(w))
+#     M = np.array(M)
+#     if len(M)!=0:
+#         v = M.max(axis=0)
+#     else:
+#         return np.zeros(dim)
+#     return v
+#
+# text = df["text_all"].apply(lambda x: x.split()).values
+# train = text[:ntrain]
+# test = text[ntrain:]
+# del text; gc.collect()
+# print("text...")
+#
+# train_vectors = np.array(Parallel(n_jobs=-1)([delayed(sent2vec)(s, 100) for s in train]))
+# print("train load...")
+# test_vectors = np.array(Parallel(n_jobs=-1)([delayed(sent2vec)(s, 100) for s in test]))
+# print("test load...")
+# oof_lgbm_classify(train_vectors,test_vectors,y_bin,"meanvectors_bin_classify_fasttext")
+# oof_lgbm_classify(train_vectors,test_vectors,y_high,"meanvectors_high_classify_fasttext")
+#
+# train_vectors = np.array(Parallel(n_jobs=-1)([delayed(sent2vec_min)(s, 100) for s in train]))
+# test_vectors = np.array(Parallel(n_jobs=-1)([delayed(sent2vec_min)(s, 100) for s in test]))
+# oof_lgbm_classify(train_vectors,test_vectors,y_bin,"minvectors_bin_classify_fasttext")
+# oof_lgbm_classify(train_vectors,test_vectors,y_high,"minvectors_high_classify_fasttext")
+#
+# train_vectors = np.array(Parallel(n_jobs=-1)([delayed(sent2vec_max)(s, 100) for s in train]))
+# test_vectors = np.array(Parallel(n_jobs=-1)([delayed(sent2vec_max)(s, 100) for s in test]))
+# oof_lgbm_classify(train_vectors,test_vectors,y_bin,"maxvectors_bin_classify_fasttext")
+# oof_lgbm_classify(train_vectors,test_vectors,y_high,"maxvectors_high_classify_fasttext")
+#
+# model = gensim.models.KeyedVectors.load_word2vec_format("../model/wiki.ru.vec",binary=False)
+#
+# def word2vec_sentencevec(words, dim):
+#     M = []
+#     for w in words.split():
+#         try:
+#             M.append(model[w])
+#         except:
+#             M.append(np.zeros(dim))
+#     if len(M)==0:
+#         return np.zeros(dim)
+#     else:
+#         M = np.array(M)
+#     v = M.sum(axis=0)
+#     v = np.array(v)
+#     return v / np.sqrt((v ** 2).sum())
+#
+# text = df["text_all"].values
+# train = text[:ntrain]
+# test = text[ntrain:]
+# del text; gc.collect()
+# print("text...")
+#
+# train_vectors = np.array(Parallel(n_jobs=2,verbose=2)([delayed(word2vec_sentencevec)(s, 300) for s in train]))
+# print("train load...")
+# del train; gc.collect()
+# test_vectors = np.array(Parallel(n_jobs=2,verbose=2)([delayed(word2vec_sentencevec)(s, 300) for s in test]))
+# print("test load...")
+# del test; gc.collect()
+# oof_lgbm_classify(train_vectors,test_vectors,y_bin,"stemmed_wordvector_bin")
+# oof_lgbm_classify(train_vectors,test_vectors,y_high,"stemmed_wordvector_high")
