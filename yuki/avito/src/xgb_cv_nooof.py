@@ -25,7 +25,7 @@ try:
     print("start cross validation")
     sub = pd.DataFrame()
     sub["item_id"] = pd.read_csv("../input/test.csv")["item_id"]
-    sub["oof_stacking_level1_xgb_nooof_{}".format(version)] = 0
+    sub["oof_stacking_level1_xgb_nooof_seed42_{}".format(version)] = 0
     val_pred = np.zeros(X_train.shape[0])
 
     print("X_train shape: ", X_train.shape)
@@ -89,16 +89,16 @@ try:
                         )
 
         del d_train; gc.collect()
-        sub["oof_stacking_level1_xgb_nooof_{}".format(version)] += bst.predict(d_test) / 5
+        sub["oof_stacking_level1_xgb_nooof_seed42_{}".format(version)] += bst.predict(d_test) / 5
         y_valid_pred = bst.predict(d_val)
         val_pred[ix_valid] = y_valid_pred
         cv_scores.append(rmse(y_valid_fold, y_valid_pred))
 
     cv_score = np.mean(cv_scores)
-    train_oof = pd.DataFrame(val_pred, columns=["oof_stacking_level1_xgb_nooof_{}".format(version)])
+    train_oof = pd.DataFrame(val_pred, columns=["oof_stacking_level1_xgb_nooof_seed42_{}".format(version)])
     sub = sub.drop("item_id", axis=1)
-    to_parquet(train_oof, "../stacking/oof_stacking_level1_xgb_nooof_{}_train.parquet".format(version))
-    to_parquet(sub, "../stacking/oof_stacking_level1_xgb_nooof_{}_test.parquet".format(version))
+    to_parquet(train_oof, "../stacking/oof_stacking_level1_xgb_nooof_seed42_{}_train.parquet".format(version))
+    to_parquet(sub, "../stacking/oof_stacking_level1_xgb_nooof_seed42_{}_test.parquet".format(version))
     notify_line("XGB CV Done. SV Score: {}".format(cv_score))
 
 

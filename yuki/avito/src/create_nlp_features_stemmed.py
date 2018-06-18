@@ -87,26 +87,26 @@ def get_kur(x): return kurtosis(x.todense().T)[0]
 def get_entropy(x): return entropy(x.todense().T)[0]
 
 
-textcols = ["description", "title", "text_all"]#"description"
-for col in textcols:
-    print("Creating features {}...".format(col))
-    df_target = df[[col]].fillna("")
-
-    print("Creating basic tfidf features...")
-    df_target = df[col].fillna("")
-    tfidf_para = {
-        "stop_words": russian_stop,
-        "analyzer": 'word',
-        "token_pattern": r'\w{1,}',
-        "sublinear_tf": True,
-        "dtype": np.float32,
-        "norm": 'l2',
-        "min_df":3,
-        "smooth_idf":True
-    }
-
-    vectorizer = TfidfVectorizer(ngram_range=(1, 2), max_features=17000, **tfidf_para)
-    vecs = vectorizer.fit_transform(df_target.values)
+# textcols = ["description", "title", "text_all"]#"description"
+# for col in textcols:
+#     print("Creating features {}...".format(col))
+#     df_target = df[[col]].fillna("")
+#
+#     print("Creating basic tfidf features...")
+#     df_target = df[col].fillna("")
+#     tfidf_para = {
+#         "stop_words": russian_stop,
+#         "analyzer": 'word',
+#         "token_pattern": r'\w{1,}',
+#         "sublinear_tf": True,
+#         "dtype": np.float32,
+#         "norm": 'l2',
+#         "min_df":3,
+#         "smooth_idf":True
+#     }
+#
+#     vectorizer = TfidfVectorizer(ngram_range=(1, 2), max_features=17000, **tfidf_para)
+#     vecs = vectorizer.fit_transform(df_target.values)
 
     # df_out = pd.DataFrame()
     # df_out[col + "_stemmed_tfidf_mean"] = Parallel(n_jobs=-1)([delayed(np.mean)(v) for v in vecs])
@@ -128,10 +128,10 @@ for col in textcols:
     # to_parquet(df_out.iloc[:ntrain, :], "../features/fe_tfidf_stemmed_basic_{}_train.parquet".format(col))
     # to_parquet(df_out.iloc[ntrain:, :], "../features/fe_tfidf_stemmed_basic_{}_test.parquet".format(col))
     # del df_out; gc.collect()
-
-    oof_sgd(vecs[:ntrain,:],vecs[ntrain:,:],y,"tfidf_stemmed_{}".format(col))
-    oof_lgbm(vecs[:ntrain,:].astype(np.float32),vecs[ntrain:,:].astype(np.float32),y,"tfidf_stemmed_{}".format(col))
-    del vecs; gc.collect()
+    #
+    # oof_sgd(vecs[:ntrain,:],vecs[ntrain:,:],y,"tfidf_stemmed_{}".format(col))
+    # oof_lgbm(vecs[:ntrain,:].astype(np.float32),vecs[ntrain:,:].astype(np.float32),y,"tfidf_stemmed_{}".format(col))
+    # del vecs; gc.collect()
 
 # for col in textcols:
 #     df_target = df[col].fillna("")
@@ -173,8 +173,8 @@ for col in textcols:
 
 # Meta Text Features
 
-with open("../tmp/oof_index.dat", "rb") as f:
-        kfolds = dill.load(f)
+
+folds = get_kfolds()
 
 print("Creating Ridge Features...")
 class SklearnWrapper(object):

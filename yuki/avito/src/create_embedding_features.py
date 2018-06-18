@@ -70,10 +70,10 @@ print('\nAll Data shape: {} Rows, {} Columns'.format(*df.shape))
 
 print("Fasttext embedding")
 
-# vec_train = read_parquet("../vectors/sentence_vectors_without_stop_train.parquet").values
-# vec_test = read_parquet("../vectors/sentence_vectors_without_stop_test.parquet").values[:ntest,:]
-# oof_sgd(vec_train,vec_test,y,"oof_sentencevector")
-# oof_lgbm(vec_train,vec_test,y,"oof_sentencevector")
+vec_train = read_parquet("../vectors/sentence_vectors_without_stop_train.parquet").values
+vec_test = read_parquet("../vectors/sentence_vectors_without_stop_test.parquet").values[:ntest,:]
+oof_sgd(vec_train,vec_test,y,"oof_sentencevector")
+oof_lgbm(vec_train,vec_test,y,"oof_sentencevector")
 # vecs = np.concatenate([vec_train, vec_test])
 # df_out = pd.DataFrame()
 # df_out["sentencevector_mean"] = np.mean(vecs,axis=1)
@@ -95,63 +95,63 @@ print("Fasttext embedding")
 # to_parquet(df_out.iloc[ntrain:, :], "../features/fe_sentencevector_basic_test.parquet")
 # del df_out; gc.collect()
 
-# w2v model
-model = fastText.load_model("../model/fasttext_model_without_stop.bin")
-def sent2vec(words, dim):
-    M = []
-    for w in words:
-        M.append(model.get_word_vector(w))
-    if len(M)==0:
-        return np.zeros(dim)
-    else:
-        M = np.array(M)
-    v = M.sum(axis=0)
-    return v / np.sqrt((v ** 2).sum())
-
-def sent2vec_min(words, dim):
-    M = []
-    for w in words:
-        M.append(model.get_word_vector(w))
-    M = np.array(M)
-    if len(M) != 0:
-        v = M.min(axis=0)
-    else:
-        return np.zeros(dim)
-    return v
-
-def sent2vec_max(words, dim):
-    M = []
-    for w in words:
-        M.append(model.get_word_vector(w))
-    M = np.array(M)
-    if len(M)!=0:
-        v = M.max(axis=0)
-    else:
-        return np.zeros(dim)
-    return v
-
-text = df["text_all"].apply(lambda x: x.split()).values
-train = text[:ntrain]
-test = text[ntrain:]
-del text; gc.collect()
-print("text...")
-
-train_vectors = np.array(Parallel(n_jobs=-1)([delayed(sent2vec)(s, 100) for s in train]))
-print("train load...")
-test_vectors = np.array(Parallel(n_jobs=-1)([delayed(sent2vec)(s, 100) for s in test]))
-print("test load...")
-oof_sgd(train_vectors,test_vectors,y,"meanvectors_fasttext")
-oof_lgbm(train_vectors,test_vectors,y,"meanvectors_fasttext")
-
-train_vectors = np.array(Parallel(n_jobs=-1)([delayed(sent2vec_min)(s, 100) for s in train]))
-test_vectors = np.array(Parallel(n_jobs=-1)([delayed(sent2vec_min)(s, 100) for s in test]))
-oof_sgd(train_vectors,test_vectors,y,"minvectors_fasttext")
-oof_lgbm(train_vectors,test_vectors,y,"minvectors_fasttext")
-
-train_vectors = np.array(Parallel(n_jobs=-1)([delayed(sent2vec_max)(s, 100) for s in train]))
-test_vectors = np.array(Parallel(n_jobs=-1)([delayed(sent2vec_max)(s, 100) for s in test]))
-oof_sgd(train_vectors,test_vectors,y,"maxvectors_fasttext")
-oof_lgbm(train_vectors,test_vectors,y,"maxvectors_fasttext")
+# # w2v model
+# model = fastText.load_model("../model/fasttext_model_without_stop.bin")
+# def sent2vec(words, dim):
+#     M = []
+#     for w in words:
+#         M.append(model.get_word_vector(w))
+#     if len(M)==0:
+#         return np.zeros(dim)
+#     else:
+#         M = np.array(M)
+#     v = M.sum(axis=0)
+#     return v / np.sqrt((v ** 2).sum())
+#
+# def sent2vec_min(words, dim):
+#     M = []
+#     for w in words:
+#         M.append(model.get_word_vector(w))
+#     M = np.array(M)
+#     if len(M) != 0:
+#         v = M.min(axis=0)
+#     else:
+#         return np.zeros(dim)
+#     return v
+#
+# def sent2vec_max(words, dim):
+#     M = []
+#     for w in words:
+#         M.append(model.get_word_vector(w))
+#     M = np.array(M)
+#     if len(M)!=0:
+#         v = M.max(axis=0)
+#     else:
+#         return np.zeros(dim)
+#     return v
+#
+# text = df["text_all"].apply(lambda x: x.split()).values
+# train = text[:ntrain]
+# test = text[ntrain:]
+# del text; gc.collect()
+# print("text...")
+#
+# train_vectors = np.array(Parallel(n_jobs=-1)([delayed(sent2vec)(s, 100) for s in train]))
+# print("train load...")
+# test_vectors = np.array(Parallel(n_jobs=-1)([delayed(sent2vec)(s, 100) for s in test]))
+# print("test load...")
+# oof_sgd(train_vectors,test_vectors,y,"meanvectors_fasttext")
+# oof_lgbm(train_vectors,test_vectors,y,"meanvectors_fasttext")
+#
+# train_vectors = np.array(Parallel(n_jobs=-1)([delayed(sent2vec_min)(s, 100) for s in train]))
+# test_vectors = np.array(Parallel(n_jobs=-1)([delayed(sent2vec_min)(s, 100) for s in test]))
+# oof_sgd(train_vectors,test_vectors,y,"minvectors_fasttext")
+# oof_lgbm(train_vectors,test_vectors,y,"minvectors_fasttext")
+#
+# train_vectors = np.array(Parallel(n_jobs=-1)([delayed(sent2vec_max)(s, 100) for s in train]))
+# test_vectors = np.array(Parallel(n_jobs=-1)([delayed(sent2vec_max)(s, 100) for s in test]))
+# oof_sgd(train_vectors,test_vectors,y,"maxvectors_fasttext")
+# oof_lgbm(train_vectors,test_vectors,y,"maxvectors_fasttext")
 
 # vec_train = read_parquet("../vectors/sentence_vectors_without_stop_train.parquet").values
 # vec_test = read_parquet("../vectors/sentence_vectors_without_stop_test.parquet").values[:ntest,:]
