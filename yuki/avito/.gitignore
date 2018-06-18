@@ -1,0 +1,17 @@
+input/*
+output/*
+data/*
+features/*
+vectors/*
+tmp/*
+!tmp/no_gain_features.txt
+!tmp/no_gain_features_stack_version.txt
+!tmp/no_gain_features_selection_model.txt
+!russian_stopwords.txt
+model/*
+!.gitkeep
+.DS_Store
+__pycache__
+.ipynb_checkpoints
+stacking/*
+!.gitkeep
