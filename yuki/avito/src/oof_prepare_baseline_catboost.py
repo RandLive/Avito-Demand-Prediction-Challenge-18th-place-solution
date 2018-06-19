@@ -107,6 +107,7 @@ val_predict = np.zeros(X_train.shape[0])
 test_predict = np.zeros(X_test.shape[0])
 X_train = X_train.values
 X_test = X_test.values
+print("X_train shape: ", X_train.shape)
 val_scores = []
 for train_index, valid_index in kf.split(y):
 
