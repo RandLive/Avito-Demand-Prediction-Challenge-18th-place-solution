@@ -42,14 +42,15 @@ val_predict = np.zeros(X_train.shape[0])
 test_predict = np.zeros(X_test.shape[0])
 val_scores = []
 for train_index, valid_index in kf.split(y):
+    print("fold...")
 
     X_train_fold, X_valid_fold = X_train[train_index], X_train[valid_index]
     y_train_fold, y_valid_fold = y[train_index], y[valid_index]
     model = ExtraTreesRegressor(n_estimators=1200,
                                 criterion="mse",
                                 max_features="auto",
-                                max_depth=10,
-                                min_samples_leaf=100,
+                                max_depth=12,
+                                min_samples_leaf=200,
                                 min_impurity_decrease=0.01,
                                 n_jobs=-1,
                                 verbose=1

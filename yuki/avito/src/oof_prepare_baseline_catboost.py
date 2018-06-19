@@ -134,7 +134,7 @@ for train_index, valid_index in kf.split(y):
 
     val_predict[valid_index] = model.predict(X_valid_fold)
     test_predict += model.predict(X_test) / num_splits
-    val_scores.append(y_valid_fold, model.predict(X_valid_fold))
+    val_scores.append(rmse(y_valid_fold, model.predict(X_valid_fold)))
 
 validation_score = np.mean(val_scores)
 val_predicts = pd.DataFrame(data=val_predict, columns=["deal_probability"])
