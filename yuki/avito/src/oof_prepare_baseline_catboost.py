@@ -54,13 +54,16 @@ def column_index(df, query_cols):
 categorical_features_pos = column_index(X_train, categorical)
 
 # user feature,
-train_others = train[["user_id"]]
-test_others = test[["user_id"]]
+train_others = train[["user_id", "item_id"]]
+test_others = test[["user_id", "item_id"]]
 import glob
 user_features = glob.glob("../features/*col1_user_id*")
-for f in user_features:
+for f in user_features+["../features/fe_user_price_base.parquet"]:
     train_others = pd.merge(train_others, read_parquet(f), on="user_id", how="left")
     test_others = pd.merge(train_others, read_parquet(f), on="user_id", how="left")
+
+train_others = pd.merge(train_others, read_parquet("../features/fe_user_price_base.parquet"), on="item_id", how="left")
+test_others = pd.merge(train_others, read_parquet("../features/fe_user_price_base.parquet"), on="item_id", how="left")
 
 # image features
 img_features = glob.glob("../features/*img*train*")
@@ -82,10 +85,22 @@ for f in ridge_features:
         continue
     test_others = pd.concat([test_others, read_parquet(f)], axis=1)
 
+# price features
+for f in glob.glob("../features/*price*train*"):
+    if "fe_item_price" in f or "fe_user_price" in f:
+        continue
+    train_others = pd.concat([train_others, read_parquet(f)], axis=1)
+
+for f in glob.glob("../features/*price*test*"):
+    if "fe_item_price" in f or "fe_user_price" in f:
+        continue
+    test_others = pd.concat([test_others, read_parquet(f)], axis=1)
+
+
 X_train = pd.concat([X_train, train_others], axis=1)
 X_test = pd.concat([X_test, test_others], axis=1)
-X_train = X_train.drop("user_id", axis=1)
-X_test = X_test.drop("user_id", axis=1)
+X_train = X_train.drop(["user_id", "item_id"], axis=1)
+X_test = X_test.drop(["user_id", "item_id"], axis=1)
 
 num_splits = 5
 kf = KFold(n_splits=num_splits, random_state=42, shuffle=True)
