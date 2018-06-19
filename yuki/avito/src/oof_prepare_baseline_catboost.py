@@ -114,8 +114,8 @@ for train_index, valid_index in kf.split(y):
     X_train_fold, X_valid_fold = X_train[train_index], X_train[valid_index]
     y_train_fold, y_valid_fold = y[train_index], y[valid_index]
 
-    model = CatBoostRegressor(iterations=3000,
-                             learning_rate=0.08,
+    model = CatBoostRegressor(iterations=4000,
+                             learning_rate=0.07,
                              depth=10,
                              #loss_function='RMSE',
                              eval_metric='RMSE',
@@ -125,7 +125,7 @@ for train_index, valid_index in kf.split(y):
                              od_wait=100,
                              nan_mode="Min",
                              calc_feature_importance=False,
-                             l2_leaf_reg=0.5)
+                             l2_leaf_reg=0.8)
     model.fit(X_train_fold, y_train_fold,
                  eval_set=(X_valid_fold, y_valid_fold),
                  cat_features=categorical_features_pos,
