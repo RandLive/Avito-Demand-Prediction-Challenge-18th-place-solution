@@ -35,23 +35,23 @@ df["image_top_1"].fillna(-999, inplace=True)
 df["Weekday"] = df['activation_date'].dt.weekday
 df.drop(["activation_date", "image"], axis=1, inplace=True)
 
-categorical = ["region", "city", "parent_category_name", "category_name", "item_seq_number", "user_type", "image_top_1"]
-messy_categorical = ["param_1", "param_2", "param_3"]  # Need to find better technique for these
-print("Encoding :", categorical + messy_categorical)
+categorical = ["region", "city", "parent_category_name", "category_name", "item_seq_number", "user_type", "image_top_1", "param_1", "param_2", "param_3"]
+
+print("Encoding :", categorical )
 
 # Encoder:
 lbl = preprocessing.LabelEncoder()
-for col in categorical + messy_categorical:
+for col in categorical:
     df[col] = lbl.fit_transform(df[col].astype(str))
 
-X_train = df.iloc[:n_train, :].copy()
-X_test = df.iloc[:n_train, :].copy()
+X_train = df.iloc[:n_train, :][["price", "Weekday"]+categorical].copy()
+X_test = df.iloc[:n_train, :][["price", "Weekday"]+categorical].copy()
 
 def column_index(df, query_cols):
     cols = df.columns.values
     sidx = np.argsort(cols)
     return sidx[np.searchsorted(cols,query_cols,sorter=sidx)]
-categorical_features_pos = column_index(X_train, categorical + messy_categorical)
+categorical_features_pos = column_index(X_train, categorical)
 
 # user feature,
 train_others = train[["user_id"]]
@@ -84,6 +84,7 @@ for f in ridge_features:
 
 X_train = pd.concat([X_train, train_others], axis=1)
 X_test = pd.concat([X_test, test_others], axis=1)
+print(X_train.dtypes)
 
 num_splits = 5
 kf = KFold(n_splits=num_splits, random_state=42, shuffle=True)
@@ -105,7 +106,10 @@ for train_index, valid_index in kf.split(y):
                              random_seed = 23, # reminder of my mortality
                              od_type='Iter',
                              metric_period = 50,
-                             od_wait=20)
+                             od_wait=20,
+                             nan_mode="Min",
+                             calc_feature_importance=False,
+                             l2_leaf_reg=0.5)
     model.fit(X_train_fold, y_train_fold,
                  eval_set=(X_valid_fold, y_valid_fold),
                  cat_features=categorical_features_pos,
