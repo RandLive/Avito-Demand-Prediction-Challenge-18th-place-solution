@@ -42,7 +42,7 @@ print("Encoding :", categorical )
 # Encoder:
 lbl = preprocessing.LabelEncoder()
 for col in categorical:
-    df[col] = lbl.fit_transform(df[col].astype(str))
+    df[col] = lbl.fit_transform(df[col].fillna("_NAN_").astype(str))
 
 X_train = df.iloc[:n_train, :][["price", "Weekday"]+categorical].copy()
 X_test = df.iloc[:n_train, :][["price", "Weekday"]+categorical].copy()
@@ -114,15 +114,15 @@ for train_index, valid_index in kf.split(y):
     X_train_fold, X_valid_fold = X_train[train_index], X_train[valid_index]
     y_train_fold, y_valid_fold = y[train_index], y[valid_index]
 
-    model = CatBoostRegressor(iterations=1500,
-                             learning_rate=0.06,
+    model = CatBoostRegressor(iterations=3000,
+                             learning_rate=0.08,
                              depth=10,
                              #loss_function='RMSE',
                              eval_metric='RMSE',
                              random_seed = 23, # reminder of my mortality
                              od_type='Iter',
-                             metric_period = 50,
-                             od_wait=20,
+                             metric_period = 100,
+                             od_wait=100,
                              nan_mode="Min",
                              calc_feature_importance=False,
                              l2_leaf_reg=0.5)
