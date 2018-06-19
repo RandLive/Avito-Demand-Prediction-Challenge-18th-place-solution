@@ -51,7 +51,7 @@ def column_index(df, query_cols):
     cols = df.columns.values
     sidx = np.argsort(cols)
     return sidx[np.searchsorted(cols,query_cols,sorter=sidx)]
-categorical_features_pos = column_index(X, categorical + messy_categorical)
+categorical_features_pos = column_index(X_train, categorical + messy_categorical)
 
 # user feature,
 train_others = train[["user_id"]]
