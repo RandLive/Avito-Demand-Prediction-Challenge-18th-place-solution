@@ -27,7 +27,6 @@ test_user_ids = test.user_id.tolist()
 test_item_ids = test.item_id.tolist()
 n_train = train.shape[0]
 df = pd.concat([train, test], axis=0)
-del train, test
 gc.collect()
 
 df["price"] = np.log(df["price"] + 0.001)
