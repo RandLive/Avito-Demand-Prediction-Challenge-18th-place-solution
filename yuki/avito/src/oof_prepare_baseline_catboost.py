@@ -62,8 +62,8 @@ for f in user_features+["../features/fe_user_price_base.parquet"]:
     train_others = pd.merge(train_others, read_parquet(f), on="user_id", how="left")
     test_others = pd.merge(train_others, read_parquet(f), on="user_id", how="left")
 
-train_others = pd.merge(train_others, read_parquet("../features/fe_user_price_base.parquet"), on="item_id", how="left")
-test_others = pd.merge(train_others, read_parquet("../features/fe_user_price_base.parquet"), on="item_id", how="left")
+train_others = pd.merge(train_others, read_parquet("../features/fe_item_price_pred_diff.parquet"), on="item_id", how="left")
+test_others = pd.merge(train_others, read_parquet("../features/fe_item_price_pred_diff.parquet"), on="item_id", how="left")
 
 # image features
 img_features = glob.glob("../features/*img*train*")
@@ -114,7 +114,7 @@ for train_index, valid_index in kf.split(y):
     X_train_fold, X_valid_fold = X_train[train_index], X_train[valid_index]
     y_train_fold, y_valid_fold = y[train_index], y[valid_index]
 
-    model = CatBoostRegressor(iterations=1000,
+    model = CatBoostRegressor(iterations=1500,
                              learning_rate=0.06,
                              depth=10,
                              #loss_function='RMSE',
