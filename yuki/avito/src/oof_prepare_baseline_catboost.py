@@ -96,7 +96,6 @@ for f in glob.glob("../features/*price*test*"):
         continue
     test_others = pd.concat([test_others, read_parquet(f)], axis=1)
 
-
 X_train = pd.concat([X_train, train_others], axis=1)
 X_test = pd.concat([X_test, test_others], axis=1)
 X_train = X_train.drop(["user_id", "item_id"], axis=1)
