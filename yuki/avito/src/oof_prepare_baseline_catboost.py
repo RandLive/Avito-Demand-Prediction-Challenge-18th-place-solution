@@ -57,27 +57,27 @@ categorical_features_pos = column_index(X, categorical + messy_categorical)
 train_others = train[["user_id"]]
 test_others = test[["user_id"]]
 import glob
-user_fetures = glob.glob("../features/*col1_user_id*")
+user_features = glob.glob("../features/*col1_user_id*")
 for f in user_features:
     train_others = pd.merge(train_others, read_parquet(f), on="user_id", how="left")
     test_others = pd.merge(train_others, read_parquet(f), on="user_id", how="left")
 
 # image features
-img_fetures = glob.glob("../features/*img*train*")
-for f in img_fetures:
+img_features = glob.glob("../features/*img*train*")
+for f in img_features:
     train_others = pd.concat([train_others, read_parquet(f)], axis=1)
-img_fetures = glob.glob("../features/*img*test*")
-for f in img_fetures:
+img_features = glob.glob("../features/*img*test*")
+for f in img_features:
     test_others = pd.concat([test_others, read_parquet(f)], axis=1)
 
 # ridge feature
-ridge_fetures = glob.glob("../features/*ridge*train*")
-for f in ridge_fetures:
+ridge_features = glob.glob("../features/*ridge*train*")
+for f in ridge_features:
     if "stemmed_3_" in f or "tfidf_2" in f:
         continue
     train_others = pd.concat([train_others, read_parquet(f)], axis=1)
-ridge_fetures = glob.glob("../features/*ridge*test*")
-for f in ridge_fetures:
+ridge_features = glob.glob("../features/*ridge*test*")
+for f in ridge_features:
     if "stemmed_3_" in f or "tfidf_2" in f:
         continue
     test_others = pd.concat([test_others, read_parquet(f)], axis=1)
