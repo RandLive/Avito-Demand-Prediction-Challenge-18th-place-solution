@@ -84,7 +84,8 @@ for f in ridge_features:
 
 X_train = pd.concat([X_train, train_others], axis=1)
 X_test = pd.concat([X_test, test_others], axis=1)
-print(X_train.dtypes)
+X_train = X_train.drop("user_id", axis=1)
+X_test = X_test.drop("user_id", axis=1)
 
 num_splits = 5
 kf = KFold(n_splits=num_splits, random_state=42, shuffle=True)
