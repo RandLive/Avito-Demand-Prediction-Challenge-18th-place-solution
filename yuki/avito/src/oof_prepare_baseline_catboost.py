@@ -94,9 +94,14 @@ for f in sorted(price_feat):
         continue
     test_others = pd.concat([test_others, read_parquet(f,index=False)], axis=1)
 
+train_features = pd.concat([read_parquet("../features/fe_price_isn_resampling_train.parquet"),
+                            read_parquet("../features/fe_region_income_city_population_train.parquet")],axis=1)
+test_features = pd.concat([read_parquet("../features/fe_price_isn_resampling_test.parquet"),
+                                read_parquet("../features/fe_region_income_city_population_test.parquet")],axis=1)
 
-X_train = pd.concat([X_train, train_others], axis=1)
-X_test = pd.concat([X_test, test_others], axis=1)
+
+X_train = pd.concat([X_train, train_others, train_features], axis=1)
+X_test = pd.concat([X_test, test_others, test_features], axis=1)
 X_train = X_train.drop(["user_id", "item_id"], axis=1)
 X_test = X_test.drop(["user_id", "item_id"], axis=1)
 
