@@ -35,8 +35,9 @@ df["image_top_1"].fillna(-999, inplace=True)
 df["Weekday"] = df['activation_date'].dt.weekday
 df.drop(["activation_date", "image"], axis=1, inplace=True)
 
-categorical = ["region", "city", "parent_category_name", "category_name", "item_seq_number", "user_type", "image_top_1", "param_1", "param_2", "param_3"]
+categorical = ["Weekday","region", "city", "parent_category_name", "category_name", "item_seq_number", "user_type", "image_top_1", "param_1", "param_2", "param_3"]
 
+df = df[["price", "Weekday"]+categorical]
 print("Encoding :", categorical )
 
 # Encoder:
@@ -44,14 +45,9 @@ lbl = preprocessing.LabelEncoder()
 for col in categorical:
     df[col] = lbl.fit_transform(df[col].fillna("_NAN_").astype(str))
 
-X_train = df.iloc[:n_train, :][["price", "Weekday"]+categorical].copy()
-X_test = df.iloc[:n_train, :][["price", "Weekday"]+categorical].copy()
+X_train = df.iloc[:n_train, :]
+X_test = df.iloc[:n_train, :]
 
-def column_index(df, query_cols):
-    cols = df.columns.values
-    sidx = np.argsort(cols)
-    return sidx[np.searchsorted(cols,query_cols,sorter=sidx)]
-categorical_features_pos = column_index(X_train, categorical)
 
 # user feature,
 train_others = train[["user_id", "item_id"]]
@@ -101,6 +97,14 @@ X_test = pd.concat([X_test, test_others], axis=1)
 X_train = X_train.drop(["user_id", "item_id"], axis=1)
 X_test = X_test.drop(["user_id", "item_id"], axis=1)
 
+def column_index(df, query_cols):
+    cols = df.columns.values
+    sidx = np.argsort(cols)
+    return sidx[np.searchsorted(cols,query_cols,sorter=sidx)]
+categorical_features_pos = column_index(X_train, categorical)
+print(categorical_features_pos)
+print(X_train.columns)
+
 num_splits = 5
 kf = KFold(n_splits=num_splits, random_state=42, shuffle=True)
 val_predict = np.zeros(X_train.shape[0])
@@ -114,7 +118,7 @@ for train_index, valid_index in kf.split(y):
     X_train_fold, X_valid_fold = X_train[train_index], X_train[valid_index]
     y_train_fold, y_valid_fold = y[train_index], y[valid_index]
 
-    model = CatBoostRegressor(iterations=4000,
+    model = CatBoostRegressor(iterations=10,
                              learning_rate=0.07,
                              depth=10,
                              #loss_function='RMSE',
