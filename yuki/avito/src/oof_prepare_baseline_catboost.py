@@ -47,8 +47,6 @@ for col in categorical:
 
 X_train = df.iloc[:n_train, :]
 X_test = df.iloc[n_train:, :]
-print("X_train shape: ", X_train.shape)
-print("X_test shape: ", X_test.shape)
 
 # user feature,
 train_others = train[["user_id", "item_id"]]
@@ -56,59 +54,46 @@ test_others = test[["user_id", "item_id"]]
 import glob
 user_features = glob.glob("../features/*col1_user_id*")
 for f in user_features+["../features/fe_user_price_base.parquet"]:
-    train_others = pd.merge(train_others, read_parquet(f), on="user_id", how="left")
-    test_others = pd.merge(test_others, read_parquet(f), on="user_id", how="left")
+    train_others = pd.merge(train_others, read_parquet(f,index=False), on="user_id", how="left")
+    test_others = pd.merge(test_others, read_parquet(f,index=False), on="user_id", how="left")
 
 
-print("train_others shape: ", train_others.shape)
-print("test_others shape: ", test_others.shape)
-
-train_others = pd.merge(train_others, read_parquet("../features/fe_item_price_pred_diff.parquet"), on="item_id", how="left")
-test_others = pd.merge(test_others, read_parquet("../features/fe_item_price_pred_diff.parquet"), on="item_id", how="left")
-
-print("train_others shape: ", train_others.shape)
-print("test_others shape: ", test_others.shape)
+train_others = pd.merge(train_others, read_parquet("../features/fe_item_price_pred_diff.parquet",index=False), on="item_id", how="left")
+test_others = pd.merge(test_others, read_parquet("../features/fe_item_price_pred_diff.parquet",index=False), on="item_id", how="left")
 
 # image features
 img_features = glob.glob("../features/*img*train.parquet")
 for f in sorted(img_features):
-    train_others = pd.concat([train_others, read_parquet(f)], axis=1)
+    train_others = pd.concat([train_others, read_parquet(f,index=False)], axis=1)
 img_features = glob.glob("../features/*img*test.parquet")
 for f in sorted(img_features):
-    test_others = pd.concat([test_others, read_parquet(f)], axis=1)
-
-print("train_others shape: ", train_others.shape)
-print("test_others shape: ", test_others.shape)
+    test_others = pd.concat([test_others, read_parquet(f,index=False)], axis=1)
 
 # ridge feature
 ridge_features = glob.glob("../features/*ridge*train.parquet")
 for f in sorted(ridge_features):
     if "stemmed_3_" in f or "tfidf_2" in f:
         continue
-    train_others = pd.concat([train_others, read_parquet(f)], axis=1)
+    train_others = pd.concat([train_others, read_parquet(f,index=False)], axis=1)
 ridge_features = glob.glob("../features/*ridge*test.parquet")
 for f in sorted(ridge_features):
     if "stemmed_3_" in f or "tfidf_2" in f:
         continue
-    test_others = pd.concat([test_others, read_parquet(f)], axis=1)
+    test_others = pd.concat([test_others, read_parquet(f,index=False)], axis=1)
 
-print("train_others shape: ", train_others.shape)
-print("test_others shape: ", test_others.shape)
 
 # price features
 price_feat = glob.glob("../features/*price*train.parquet")
 for f in sorted(price_feat):
     if "fe_item_price" in f or "fe_user_price" in f:
         continue
-    train_others = pd.concat([train_others, read_parquet(f)], axis=1)
+    train_others = pd.concat([train_others, read_parquet(f,index=False)], axis=1)
 price_feat = glob.glob("../features/*price*test.parquet")
 for f in sorted(price_feat):
     if "fe_item_price" in f or "fe_user_price" in f:
         continue
-    test_others = pd.concat([test_others, read_parquet(f)], axis=1)
+    test_others = pd.concat([test_others, read_parquet(f,index=False)], axis=1)
 
-print("train_others shape: ", train_others.shape)
-print("test_others shape: ", test_others.shape)
 
 X_train = pd.concat([X_train, train_others], axis=1)
 X_test = pd.concat([X_test, test_others], axis=1)
@@ -126,13 +111,11 @@ num_splits = 5
 kf = KFold(n_splits=num_splits, random_state=42, shuffle=True)
 val_predict = np.zeros(X_train.shape[0])
 test_predict = np.zeros(X_test.shape[0])
-print(X_train.iloc[:,1])
-print(X_test.iloc[:,1])
 X_train = X_train.values
 X_test = X_test.values
 print("X_train shape: ", X_train.shape)
 print("X_test shape: ", X_test.shape)
-X_test = X_test[X_train.columns]
+
 val_scores = []
 for train_index, valid_index in kf.split(y):
 
