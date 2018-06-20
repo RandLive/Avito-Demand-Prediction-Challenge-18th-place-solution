@@ -37,7 +37,7 @@ df.drop(["activation_date", "image"], axis=1, inplace=True)
 
 categorical = ["Weekday","region", "city", "parent_category_name", "category_name", "item_seq_number", "user_type", "image_top_1", "param_1", "param_2", "param_3"]
 
-df = df[["price", "Weekday"]+categorical]
+df = df[["price"]+categorical]
 print("Encoding :", categorical )
 
 # Encoder:
@@ -56,10 +56,10 @@ import glob
 user_features = glob.glob("../features/*col1_user_id*")
 for f in user_features+["../features/fe_user_price_base.parquet"]:
     train_others = pd.merge(train_others, read_parquet(f), on="user_id", how="left")
-    test_others = pd.merge(train_others, read_parquet(f), on="user_id", how="left")
+    test_others = pd.merge(test_others, read_parquet(f), on="user_id", how="left")
 
 train_others = pd.merge(train_others, read_parquet("../features/fe_item_price_pred_diff.parquet"), on="item_id", how="left")
-test_others = pd.merge(train_others, read_parquet("../features/fe_item_price_pred_diff.parquet"), on="item_id", how="left")
+test_others = pd.merge(test_others, read_parquet("../features/fe_item_price_pred_diff.parquet"), on="item_id", how="left")
 
 # image features
 img_features = glob.glob("../features/*img*train*")
@@ -103,7 +103,6 @@ def column_index(df, query_cols):
     return sidx[np.searchsorted(cols,query_cols,sorter=sidx)]
 categorical_features_pos = column_index(X_train, categorical)
 print(categorical_features_pos)
-print(X_train.columns)
 
 num_splits = 5
 kf = KFold(n_splits=num_splits, random_state=42, shuffle=True)
