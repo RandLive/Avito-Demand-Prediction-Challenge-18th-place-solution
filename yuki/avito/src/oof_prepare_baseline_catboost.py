@@ -46,7 +46,7 @@ for col in categorical:
     df[col] = lbl.fit_transform(df[col].fillna("_NAN_").astype(str))
 
 X_train = df.iloc[:n_train, :]
-X_test = df.iloc[:n_train, :]
+X_test = df.iloc[n_train:, :]
 
 
 # user feature,
@@ -62,10 +62,10 @@ train_others = pd.merge(train_others, read_parquet("../features/fe_item_price_pr
 test_others = pd.merge(test_others, read_parquet("../features/fe_item_price_pred_diff.parquet"), on="item_id", how="left")
 
 # image features
-img_features = glob.glob("../features/*img*train*")
+img_features = glob.glob("../features/*img*train.parquer")
 for f in img_features:
     train_others = pd.concat([train_others, read_parquet(f)], axis=1)
-img_features = glob.glob("../features/*img*test*")
+img_features = glob.glob("../features/*img*test.parquer")
 for f in img_features:
     test_others = pd.concat([test_others, read_parquet(f)], axis=1)
 
