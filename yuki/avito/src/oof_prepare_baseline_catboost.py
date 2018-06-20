@@ -47,7 +47,8 @@ for col in categorical:
 
 X_train = df.iloc[:n_train, :]
 X_test = df.iloc[n_train:, :]
-
+print("X_train shape: ", X_train.shape)
+print("X_test shape: ", X_test.shape)
 
 # user feature,
 train_others = train[["user_id", "item_id"]]
@@ -58,8 +59,15 @@ for f in user_features+["../features/fe_user_price_base.parquet"]:
     train_others = pd.merge(train_others, read_parquet(f), on="user_id", how="left")
     test_others = pd.merge(test_others, read_parquet(f), on="user_id", how="left")
 
+
+print("train_others shape: ", train_others.shape)
+print("test_others shape: ", test_others.shape)
+
 train_others = pd.merge(train_others, read_parquet("../features/fe_item_price_pred_diff.parquet"), on="item_id", how="left")
 test_others = pd.merge(test_others, read_parquet("../features/fe_item_price_pred_diff.parquet"), on="item_id", how="left")
+
+print("train_others shape: ", train_others.shape)
+print("test_others shape: ", test_others.shape)
 
 # image features
 img_features = glob.glob("../features/*img*train.parquet")
@@ -68,6 +76,9 @@ for f in sorted(img_features):
 img_features = glob.glob("../features/*img*test.parquet")
 for f in sorted(img_features):
     test_others = pd.concat([test_others, read_parquet(f)], axis=1)
+
+print("train_others shape: ", train_others.shape)
+print("test_others shape: ", test_others.shape)
 
 # ridge feature
 ridge_features = glob.glob("../features/*ridge*train.parquet")
@@ -81,6 +92,9 @@ for f in sorted(ridge_features):
         continue
     test_others = pd.concat([test_others, read_parquet(f)], axis=1)
 
+print("train_others shape: ", train_others.shape)
+print("test_others shape: ", test_others.shape)
+
 # price features
 price_feat = glob.glob("../features/*price*train.parquet")
 for f in sorted(price_feat):
@@ -92,6 +106,9 @@ for f in sorted(price_feat):
     if "fe_item_price" in f or "fe_user_price" in f:
         continue
     test_others = pd.concat([test_others, read_parquet(f)], axis=1)
+
+print("train_others shape: ", train_others.shape)
+print("test_others shape: ", test_others.shape)
 
 X_train = pd.concat([X_train, train_others], axis=1)
 X_test = pd.concat([X_test, test_others], axis=1)
