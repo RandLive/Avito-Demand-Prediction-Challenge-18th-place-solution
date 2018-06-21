@@ -83,16 +83,16 @@ for f in sorted(ridge_features):
 
 
 # price features
-price_feat = glob.glob("../features/*price*train.parquet")
-for f in sorted(price_feat):
-    if "fe_item_price" in f or "fe_user_price" in f:
-        continue
-    train_others = pd.concat([train_others, read_parquet(f,index=False)], axis=1)
-price_feat = glob.glob("../features/*price*test.parquet")
-for f in sorted(price_feat):
-    if "fe_item_price" in f or "fe_user_price" in f:
-        continue
-    test_others = pd.concat([test_others, read_parquet(f,index=False)], axis=1)
+# price_feat = glob.glob("../features/*price*train.parquet")
+# for f in sorted(price_feat):
+#     if "fe_item_price" in f or "fe_user_price" in f:
+#         continue
+#     train_others = pd.concat([train_others, read_parquet(f,index=False)], axis=1)
+# price_feat = glob.glob("../features/*price*test.parquet")
+# for f in sorted(price_feat):
+#     if "fe_item_price" in f or "fe_user_price" in f:
+#         continue
+#     test_others = pd.concat([test_others, read_parquet(f,index=False)], axis=1)
 
 train_features = pd.concat([read_parquet("../features/fe_price_isn_resampling_train.parquet"),
                             read_parquet("../features/fe_region_income_city_population_train.parquet")],axis=1)
