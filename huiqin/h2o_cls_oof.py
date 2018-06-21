@@ -14,8 +14,9 @@ from sklearn.metrics import mean_squared_error
 
 import h2o
 from h2o.automl import H2OAutoML
+import re
 # Set it according to kernel limits
-h2o.init(max_mem_size = "20G",nthreads=12,)
+h2o.init(max_mem_size = "20G",nthreads=20,)
 
 print("\nData Load Stage")
 #,nrows=10000
@@ -51,7 +52,20 @@ print("\nEncode Variables")
 categorical = ["user_id", "region", "city", "parent_category_name", "category_name", "item_seq_number", "user_type",
                "image_top_1"]
 # messy_categorical = ["param_1", "param_2", "param_3", "title", "description"]  # Need to find better technique for these
-messy_categorical = ["param_1", "param_2", "param_3"]
+def text_preprocessing(text):
+    text = str(text)
+    text = text.lower()
+    text = re.sub(r"(\\u[0-9A-Fa-f]+)",r"", text)
+    text = re.sub(r"===",r" ", text)
+    # https://www.kaggle.com/demery/lightgbm-with-ridge-feature/code
+    text = " ".join(map(str.strip, re.split('(\d+)',text)))
+    regex = re.compile(u'[^[:alpha:]]')
+    text = regex.sub(" ", text)
+    text = " ".join(text.split())
+    return text
+df["title"]=df["title"].apply(text_preprocessing)
+df["description"]=df["description"].apply(text_preprocessing)
+messy_categorical = ["param_1", "param_2", "param_3", "title","description"]
 print("Encoding :", categorical + messy_categorical)
 
 # Encoder:
@@ -92,8 +106,8 @@ for train_index, val_index in kf.split(X):
     fold_id += 1
     x_train, x_val = X[train_index], X[val_index]
     y_train, y_val = y[train_index], y[val_index]
-    # x_train, x_val = X.loc[train_index, :], X.loc[val_index, :]
-    # y_train, y_val = y[train_index], y[val_index]
+    #x_train, x_val = X.loc[train_index], X.loc[val_index]
+    #y_train, y_val = y[train_index], y[val_index]
 
 
     htrain = h2o.H2OFrame(x_train)
@@ -106,7 +120,8 @@ for train_index, val_index in kf.split(X):
 
 
     # Set maximum runtime according to Kaggle limits
-    aml = H2OAutoML(max_runtime_secs = 20000)#18000
+    # aml = H2OAutoML(max_runtime_secs = 20000)#18000
+    aml = H2OAutoML(max_runtime_secs = 20000)
     # aml.train(x=x1,y=y1, training_frame=htrain, validation_frame=hval, leaderboard_frame = hval)
     aml.train( y=y1,training_frame=htrain, validation_frame=hval, leaderboard_frame=hval)
 
