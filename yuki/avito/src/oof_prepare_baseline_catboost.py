@@ -109,7 +109,7 @@ def column_index(df, query_cols):
     cols = df.columns.values
     sidx = np.argsort(cols)
     return sidx[np.searchsorted(cols,query_cols,sorter=sidx)]
-categorical_features_pos = column_index(X_train, categorica+["price+", "item_seq_number+"])
+categorical_features_pos = column_index(X_train, categorical+["price+", "item_seq_number+"])
 print(categorical_features_pos)
 
 num_splits = 5
