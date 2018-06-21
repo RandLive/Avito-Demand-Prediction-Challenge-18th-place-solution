@@ -84,6 +84,18 @@ full_df = pd.merge(full_df, huiqin_fm_full, on='item_id', how='left')
 del huiqin_fm_train, huiqin_fm_test
 gc.collect()
 
+# FM huiqing
+print("load huiqin_catboost oof ...")
+huiqin_catboost_train = pd.read_csv('../input/catboost_submissionV2_train.csv')
+huiqin_catboost_train.drop("user_id", axis=1, inplace=True)
+huiqin_catboost_test = pd.read_csv('../input/catboost_submissionV2_5fold.csv')
+#huiqin_catboost_test.drop("user_id", axis=1, inplace=True)
+huiqin_catboost_full = pd.concat([huiqin_catboost_train, huiqin_catboost_test], sort=False)
+huiqin_catboost_full.rename(columns={'deal_probability': 'huiqin_catboost_1'}, inplace=True)
+full_df = pd.merge(full_df, huiqin_catboost_full, on='item_id', how='left')
+del huiqin_catboost_train, huiqin_catboost_test
+gc.collect()
+
 
 full_df.drop(["user_id", "description",
               "activation_date", "title",

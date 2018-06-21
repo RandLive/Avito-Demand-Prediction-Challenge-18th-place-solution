@@ -15,7 +15,7 @@ b1 = pd.merge(b1, b5, how='left', on='item_id')
 b1['deal_probability'] = (b1['dp1']+b1['dp2']+b1['dp3']+b1['dp4']+b1['dp5'])/5
 
 
-b1[['item_id','deal_probability']].to_csv('stacked_xgb__sub.csv', index=False)
+b1[['item_id','deal_probability']].to_csv('stacked_xgb_sub.csv', index=False)
 print('correlation between models outputs')
 blend_results = pd.concat([ b1['dp1'], b1['dp2'], b1['dp3'], b1['dp4'], b1['dp5']],axis=1)
 print(blend_results.corr())
