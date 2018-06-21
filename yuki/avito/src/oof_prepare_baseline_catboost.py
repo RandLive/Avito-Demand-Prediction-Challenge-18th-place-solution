@@ -127,7 +127,7 @@ for train_index, valid_index in kf.split(y):
     X_train_fold, X_valid_fold = X_train[train_index], X_train[valid_index]
     y_train_fold, y_valid_fold = y[train_index], y[valid_index]
 
-    model = CatBoostRegressor(iterations=4000,
+    model = CatBoostRegressor(iterations=7000,
                              learning_rate=0.07,
                              depth=9,
                              #loss_function='RMSE',
